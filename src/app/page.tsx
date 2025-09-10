@@ -7,39 +7,37 @@ export default function Home() {
   const loginBg = PlaceHolderImages.find(img => img.id === 'login-bg');
   
   return (
-    <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
-      <div className="hidden bg-muted lg:block relative">
+    <div className="relative min-h-screen w-full lg:grid lg:grid-cols-2">
+      <div className="flex items-center justify-center py-12 bg-background">
+        <div className="mx-auto grid w-[380px] gap-8 p-4">
+           <div className="flex flex-col items-center text-center gap-2 mb-4">
+              <Logo className="h-12 w-12 text-primary" />
+              <h1 className="text-3xl font-bold font-heading text-primary tracking-tighter">
+                Previdenciarista AI
+              </h1>
+              <p className="text-balance text-muted-foreground">
+                Bem-vindo de volta! Acesse sua conta para continuar.
+              </p>
+          </div>
+          <LoginForm />
+        </div>
+      </div>
+       <div className="hidden lg:block relative group">
         {loginBg && (
           <Image
             src={loginBg.imageUrl}
             alt={loginBg.description}
             data-ai-hint={loginBg.imageHint}
-            className="h-full w-full object-cover dark:brightness-[0.3]"
+            className="h-full w-full object-cover brightness-50 group-hover:brightness-75 transition-all duration-300"
             fill
             priority
           />
         )}
-         <div className="absolute top-8 left-8 text-white flex items-center gap-3 bg-black/30 p-4 rounded-lg backdrop-blur-sm">
-          <Logo className="h-10 w-10 text-white" />
-          <div>
-            <h1 className="text-2xl font-bold tracking-wider">Previdenciarista AI</h1>
-            <p className="text-sm text-white/80">O futuro do direito previdenciário.</p>
-          </div>
-        </div>
-        <div className="absolute bottom-8 left-8 text-white max-w-md bg-black/30 p-4 rounded-lg backdrop-blur-sm">
-            <h2 className="text-xl font-semibold">Decisões mais rápidas e inteligentes.</h2>
-            <p className="mt-2 text-white/80">Nossa plataforma de IA analisa documentos, identifica oportunidades e gera petições, otimizando seu tempo e aumentando sua eficiência.</p>
-        </div>
-      </div>
-      <div className="flex items-center justify-center py-12 bg-background">
-        <div className="mx-auto grid w-[380px] gap-8 p-6">
-          <div className="grid gap-3 text-center">
-            <h1 className="text-3xl font-bold text-primary">Acesse sua Plataforma</h1>
-            <p className="text-balance text-muted-foreground">
-              Insira suas credenciais para começar a revolucionar sua advocacia previdenciária.
+         <div className="absolute bottom-0 left-0 right-0 p-8 text-white bg-gradient-to-t from-black/80 via-black/50 to-transparent">
+            <h2 className="text-2xl font-bold font-heading">Decisões mais rápidas e inteligentes.</h2>
+            <p className="mt-2 text-lg text-white/80 max-w-xl">
+              Nossa plataforma de IA analisa documentos, identifica oportunidades e gera petições, otimizando seu tempo e aumentando sua eficiência.
             </p>
-          </div>
-          <LoginForm />
         </div>
       </div>
     </div>

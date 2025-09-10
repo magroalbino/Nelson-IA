@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LogIn } from "lucide-react";
+import { useState } from "react";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -28,6 +29,8 @@ const formSchema = z.object({
 
 export function LoginForm() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -37,12 +40,18 @@ export function LoginForm() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    console.log(values);
+    
     // Simulate API call
-    toast({
-      title: "Login bem-sucedido!",
-      description: "Redirecionando para o seu dashboard...",
-    });
-    router.push('/dashboard');
+    setTimeout(() => {
+      toast({
+        title: "Login bem-sucedido!",
+        description: "Redirecionando para o seu dashboard...",
+      });
+      router.push('/dashboard');
+      setIsLoading(false);
+    }, 1000);
   }
 
   return (
@@ -53,7 +62,7 @@ export function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email Corporativo</FormLabel>
+              <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input placeholder="seu@email.com" {...field} />
               </FormControl>
@@ -70,21 +79,30 @@ export function LoginForm() {
                 <FormLabel>Senha</FormLabel>
                 <a
                   href="#"
-                  className="ml-auto inline-block text-sm underline"
+                  className="ml-auto inline-block text-sm text-primary/80 underline-offset-4 hover:text-primary hover:underline"
                 >
                   Esqueceu sua senha?
                 </a>
               </div>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input type="password" placeholder="Sua senha" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" size="lg">
-          Entrar na Plataforma
-          <ArrowRight />
+        <Button type="submit" className="w-full group" size="lg" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <LogIn className="animate-pulse mr-2" />
+              <span>Entrando...</span>
+            </>
+          ) : (
+             <>
+              <span>Entrar na Plataforma</span>
+              <ArrowRight className="transition-transform group-hover:translate-x-1" />
+            </>
+          )}
         </Button>
       </form>
     </Form>
