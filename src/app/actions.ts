@@ -4,6 +4,7 @@ import { z } from "zod";
 import { generateLegalPetition } from "@/ai/flows/generate-legal-petition";
 import { summarizeCnisAnalysis } from "@/ai/flows/summarize-cnis-analysis";
 import { extractPapData } from "@/ai/flows/extract-pap-data";
+import { analyzePppDocument } from "@/ai/flows/analyze-ppp-document";
 
 // Schema for Legal Petition Generation
 const petitionSchema = z.object({
@@ -136,4 +137,56 @@ export async function analyzePapAction(prevState: PapState, formData: FormData):
             message: 'Falha ao analisar o PAP. O formato do arquivo pode ser inválido.',
         };
     }
+}
+
+// Schema for PPP Analysis
+const pppSchema = z.object({
+  pppDocumentUri: z.string().min(1, "O upload do documento PPP é obrigatório."),
+});
+
+interface PppState {
+  errors?: { pppDocumentUri?: string[] };
+  message?: string | null;
+  data?: {
+    nomeTrabalhador: string;
+    empregador: string;
+    resumoGeral: string;
+    registrosExposicao: {
+      periodo: string;
+      fatorDeRisco: string;
+      intensidade: string;
+      tecnicaUtilizada: string;
+      epcEficaz: string;
+      epiEficaz: string;
+    }[];
+  } | null;
+}
+
+export async function analyzePppAction(
+  prevState: PppState,
+  formData: FormData
+): Promise<PppState> {
+  const validatedFields = pppSchema.safeParse({
+    pppDocumentUri: formData.get("pppDocumentUri"),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "Dados inválidos. Verifique o formulário.",
+    };
+  }
+
+  try {
+    const result = await analyzePppDocument(validatedFields.data);
+    return {
+      message: "Análise do PPP concluída com sucesso!",
+      data: result,
+    };
+  } catch (error) {
+    console.error("Error analyzing PPP:", error);
+    return {
+      message: "Ocorreu um erro ao analisar o documento PPP. Verifique o formato do arquivo ou tente novamente.",
+    };
+  }
 }
