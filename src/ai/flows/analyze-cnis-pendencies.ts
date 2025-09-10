@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview An AI agent for analyzing CNIS pendencies (indicators).
+ * @fileOverview An AI agent for analyzing CNIS pendencies (indicators) and providing a strategic overview.
  *
  * - analyzeCnisPendencies - A function that handles the CNIS pendency analysis process.
  * - AnalyzeCnisPendenciesInput - The input type for the analyzeCnisPendencies function.
@@ -20,14 +20,14 @@ export type AnalyzeCnisPendenciesInput = z.infer<typeof AnalyzeCnisPendenciesInp
 
 const PendencySchema = z.object({
     indicator: z.string().describe("The acronym or indicator of the pendency (e.g., 'PEXT', 'AEXT-VI')."),
-    description: z.string().describe("A clear and objective explanation of what the pendency means."),
+    description: z.string().describe("A clear and objective explanation of what the pendency means for the client's retirement."),
     recommendedAction: z.string().describe("The recommended action or necessary documentation to resolve the issue."),
     relatedPeriods: z.array(z.string()).describe("The contribution periods (e.g., '01/01/2020 - 31/12/2020') associated with this pendency.")
 });
 
 const AnalyzeCnisPendenciesOutputSchema = z.object({
     pendencies: z.array(PendencySchema).describe("A list of all identified pendencies in the CNIS document."),
-    summary: z.string().describe("A general summary about the identified pendencies and the overall situation of the contribution history.")
+    summary: z.string().describe("A strategic summary about the identified pendencies, the overall quality of the contributions, and whether it's advisable to continue contributing to improve the retirement benefit. It should also mention the possibility of retroactive payments for specific periods if any are identified.")
 });
 export type AnalyzeCnisPendenciesOutput = z.infer<typeof AnalyzeCnisPendenciesOutputSchema>;
 
@@ -40,20 +40,28 @@ const prompt = ai.definePrompt({
   name: 'analyzeCnisPendenciesPrompt',
   input: {schema: AnalyzeCnisPendenciesInputSchema},
   output: {schema: AnalyzeCnisPendenciesOutputSchema},
-  prompt: `Você é um advogado previdenciarista sênior, especialista em decifrar os detalhes de um Extrato de Contribuição (CNIS) do INSS. Sua tarefa é analisar o texto do CNIS fornecido e identificar todas as pendências e indicadores existentes.
+  prompt: `Você é um advogado previdenciarista sênior, especialista em decifrar os detalhes de um Extrato de Contribuição (CNIS) do INSS. Sua tarefa é realizar uma análise completa e estratégica do texto do CNIS fornecido.
 
 Analise o texto do CNIS:
 {{{cnisText}}}
 
+Sua análise deve ser dividida em duas partes:
+
+**1. Lista de Pendências e Indicadores:**
 Para cada pendência ou indicador encontrado (ex: PEXT, PREC-MENOR-MIN, AEXT-VI, PADM-EMPR, etc.), você deve extrair e estruturar as seguintes informações:
-1.  **indicator**: A sigla exata do indicador.
-2.  **description**: Uma explicação clara e concisa do que essa pendência significa para o segurado.
-3.  **recommendedAction**: Qual é a ação recomendada ou quais documentos são necessários para tratar ou resolver essa pendência. Seja específico.
-4.  **relatedPeriods**: Uma lista dos períodos (no formato "DD/MM/AAAA - DD/MM/AAAA") que estão associados a essa pendência.
+- **indicator**: A sigla exata do indicador.
+- **description**: Uma explicação clara e concisa do que essa pendência significa para o segurado e seu processo de aposentadoria.
+- **recommendedAction**: Qual é a ação recomendada ou quais documentos são necessários para tratar ou resolver essa pendência. Seja específico.
+- **relatedPeriods**: Uma lista dos períodos (no formato "DD/MM/AAAA - DD/MM/AAAA") que estão associados a essa pendência.
 
-Além da lista de pendências, forneça um **summary** geral sobre a situação do extrato, alertando para a importância de regularizar os indicadores antes de um pedido de benefício.
+**2. Resumo Estratégico (summary):**
+Elabore um resumo geral e estratégico que vá além da simples lista de pendências. Este resumo deve incluir:
+- Uma avaliação da qualidade geral do histórico de contribuições.
+- A menção explícita sobre a possibilidade de pagar contribuições retroativas para períodos específicos, caso identifique lacunas ou indicadores que permitam essa ação.
+- Uma análise sobre a viabilidade de continuar contribuindo, mesmo que o tempo de carência já tenha sido atingido, explicando como isso pode impactar o valor final do benefício.
+- Uma conclusão sobre a importância de regularizar todos os indicadores antes de qualquer pedido de benefício para evitar indeferimentos ou atrasos.
 
-Se nenhum indicador for encontrado, retorne uma lista de pendências vazia e um resumo informando que o extrato parece estar regular.`,
+Se nenhum indicador for encontrado, retorne uma lista de pendências vazia e um resumo informando que o extrato parece estar regular, mas ainda assim, forneça uma análise estratégica geral sobre a qualidade das contribuições.`,
 });
 
 const analyzeCnisPendenciesFlow = ai.defineFlow(

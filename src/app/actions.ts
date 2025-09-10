@@ -2,8 +2,8 @@
 
 import { z } from "zod";
 import { generateLegalPetition } from "@/ai/flows/generate-legal-petition";
-import { summarizeCnisAnalysis } from "@/ai/flows/summarize-cnis-analysis";
-import { extractPapData } from "@/aiflows/extract-pap-data";
+import { analyzeCnisPendencies } from "@/ai/flows/analyze-cnis-pendencies";
+import { extractPapData } from "@/ai/flows/extract-pap-data";
 import { analyzePppDocument } from "@/ai/flows/analyze-ppp-document";
 import { analyzeRetirementEligibility } from "@/ai/flows/analyze-retirement-eligibility";
 
@@ -66,7 +66,15 @@ const cnisSchema = z.object({
 interface CnisState {
     errors?: { cnisData?: string[] };
     message?: string | null;
-    data?: { summary: string; } | null;
+    data?: {
+      pendencies: {
+        indicator: string;
+        description: string;
+        recommendedAction: string;
+        relatedPeriods: string[];
+      }[];
+      summary: string;
+    } | null;
 }
 
 export async function analyzeCnisAction(prevState: CnisState, formData: FormData): Promise<CnisState> {
@@ -82,7 +90,7 @@ export async function analyzeCnisAction(prevState: CnisState, formData: FormData
     }
 
     try {
-        const result = await summarizeCnisAnalysis(validatedFields.data);
+        const result = await analyzeCnisPendencies({ cnisText: validatedFields.data.cnisData });
         return {
             message: 'Análise do CNIS concluída!',
             data: result,

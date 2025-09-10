@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { FileScan, Loader2, ServerCrash, Terminal } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FileScan, Loader2, ServerCrash, Lightbulb, AlertTriangle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -27,7 +29,7 @@ const initialState = {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" disabled={pending} size="lg">
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -44,29 +46,22 @@ export default function CnisAnalyzerPage() {
   const [state, formAction] = useFormState(analyzeCnisAction, initialState);
 
   useEffect(() => {
-    if (state.message && !state.errors) {
+    if (state.message) {
       toast({
-        title: "Sucesso!",
+        title: state.errors || !state.data ? "Erro" : "Sucesso!",
         description: state.message,
-      });
-    } else if (state.message && state.errors) {
-       toast({
-        variant: "destructive",
-        title: "Erro na Validação",
-        description: state.message,
+        variant: state.errors || !state.data ? "destructive" : "default",
       });
     }
   }, [state]);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-8">
       <Card>
         <CardHeader>
-          <CardTitle>Analisador Rápido de CNIS</CardTitle>
+          <CardTitle>Analisador Estratégico de CNIS</CardTitle>
           <CardDescription>
-            Copie e cole o conteúdo do seu CNIS (em formato de texto) abaixo
-            para uma análise rápida de períodos, contribuições e
-            inconsistências.
+            Copie e cole o conteúdo completo do CNIS (em formato de texto) abaixo. A IA irá identificar pendências, sugerir ações e fornecer um resumo estratégico completo.
           </CardDescription>
         </CardHeader>
         <form action={formAction}>
@@ -77,10 +72,10 @@ export default function CnisAnalyzerPage() {
                 id="cnisData"
                 name="cnisData"
                 placeholder="Cole o texto do seu CNIS aqui..."
-                className="min-h-[250px]"
+                className="min-h-[300px] font-mono text-xs"
               />
               {state.errors?.cnisData && (
-                <p className="text-sm text-destructive">{state.errors.cnisData[0]}</p>
+                <p className="text-sm text-destructive mt-2">{state.errors.cnisData[0]}</p>
               )}
             </div>
           </CardContent>
@@ -90,28 +85,7 @@ export default function CnisAnalyzerPage() {
         </form>
       </Card>
 
-      {state.data && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileScan /> Resultado da Análise
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <Alert>
-              <Terminal className="h-4 w-4" />
-              <AlertTitle>Resumo da Análise</AlertTitle>
-              <AlertDescription>
-                <p className="whitespace-pre-wrap font-mono text-sm">
-                 {state.data.summary}
-                </p>
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      )}
-
-      {state.message && state.errors && (
+      {state.message && (state.errors || !state.data) && (
          <Alert variant="destructive">
           <ServerCrash className="h-4 w-4" />
           <AlertTitle>Falha na Análise</AlertTitle>
@@ -119,6 +93,65 @@ export default function CnisAnalyzerPage() {
             {state.message}
           </AlertDescription>
         </Alert>
+      )}
+
+      {state.data && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileScan /> Relatório de Análise do CNIS
+            </CardTitle>
+            <CardDescription>Abaixo estão os resultados detalhados e o resumo estratégico gerado pela IA.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2"><AlertTriangle className="text-destructive"/> Pendências e Indicadores Identificados</h3>
+                {state.data.pendencies.length > 0 ? (
+                    <div className="border rounded-lg overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[120px]">Indicador</TableHead>
+                                    <TableHead>Descrição do Problema</TableHead>
+                                    <TableHead>Ação Recomendada</TableHead>
+                                    <TableHead>Períodos Afetados</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {state.data.pendencies.map((p, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell><Badge variant="destructive">{p.indicator}</Badge></TableCell>
+                                        <TableCell className="text-sm">{p.description}</TableCell>
+                                        <TableCell className="text-sm font-medium">{p.recommendedAction}</TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col gap-1">
+                                                {p.relatedPeriods.map((period, i) => <Badge key={i} variant="secondary">{period}</Badge>)}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                ) : (
+                    <Alert variant="default" className="border-green-500 bg-green-50 text-green-800">
+                        <AlertTitle>Nenhuma Pendência Encontrada</AlertTitle>
+                        <AlertDescription>
+                            A análise não identificou nenhum indicador de pendência no CNIS fornecido. O extrato parece estar regular.
+                        </AlertDescription>
+                    </Alert>
+                )}
+            </div>
+             
+             <Alert variant="default" className="bg-muted/50">
+              <Lightbulb className="h-4 w-4" />
+              <AlertTitle>Resumo Estratégico da IA</AlertTitle>
+              <AlertDescription className="mt-2">
+                <p className="leading-relaxed whitespace-pre-wrap">{state.data.summary}</p>
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
