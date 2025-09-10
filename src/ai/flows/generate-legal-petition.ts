@@ -47,14 +47,37 @@ const prompt = ai.definePrompt({
   output: {
     schema: GenerateLegalPetitionOutputSchema,
   },
-  prompt: `You are a highly skilled legal professional, expert in Brazilian social security law.
+  prompt: `Você é um advogado previdenciarista de elite, especialista em redigir peças processuais e administrativas com alta precisão técnica e argumentativa.
 
-  Based on the data provided for the client, generate a legal petition of the specified type (administrativo ou judicial).
-  The legal petition should include all relevant legal arguments and be pre-filled with the client's data.
-  Also provide suggestions of documents that must be attached to the petition.
+Sua tarefa é gerar uma petição (do tipo '{{{tipoPetição}}}') com base nos dados consolidados do segurado.
 
-  Client Data: {{{seguradoData}}}
-  Petition Type: {{{tipoPetição}}}
+**Instruções Detalhadas:**
+
+1.  **Analise Profundamente os Dados:** Examine todos os dados do segurado fornecidos. Identifique os pontos cruciais:
+    *   Períodos de atividade especial (com base no PPP) que podem não ter sido reconhecidos.
+    *   Vínculos empregatícios no CNIS ou PAP que possuem pendências ou que precisam ser comprovados.
+    *   O resultado da análise de elegibilidade, focando nos requisitos que foram ou não atendidos.
+
+2.  **Construa a Argumentação Jurídica:**
+    *   Não apenas preencha um modelo. Crie uma narrativa coesa e lógica.
+    *   Inicie com um resumo dos fatos.
+    *   Para cada ponto identificado (ex: pedido de reconhecimento de tempo especial), desenvolva um tópico específico na petição.
+    *   Fundamente cada tópico com a legislação brasileira pertinente (ex: Lei 8.213/91, Decretos, etc.) e, se possível, mencione teses jurídicas relevantes (ex: Tema 1031 do STJ para EPI).
+
+3.  **Estruture a Petição:**
+    *   Use formatação clara (negrito, parágrafos, listas) para facilitar a leitura.
+    *   Inclua campos para os dados do segurado (Nome, CPF, NIT) e o endereçamento correto (Ex: "AO CHEFE DA AGÊNCIA DA PREVIDÊNCIA SOCIAL EM [CIDADE]" para administrativo ou "EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) FEDERAL DO JUIZADO ESPECIAL FEDERAL DE [CIDADE/UF]" para judicial).
+    *   Finalize com os pedidos claros e objetivos (ex: "requer o reconhecimento do período especial de X a Y", "a concessão do benefício de aposentadoria Z", etc.).
+
+4.  **Sugira Documentos Essenciais:** Com base nos argumentos que você montou, liste os documentos que são **essenciais** para comprovar o direito (ex: "PPP da empresa X", "Laudo Técnico das Condições Ambientais de Trabalho (LTCAT)", "Carteira de Trabalho", "Procuração", etc.).
+
+**Dados do Segurado:**
+{{{seguradoData}}}
+
+**Tipo de Petição a ser Gerada:**
+{{{tipoPetição}}}
+
+Execute a tarefa com o mais alto nível de detalhe e expertise jurídica.
   `,
 });
 
