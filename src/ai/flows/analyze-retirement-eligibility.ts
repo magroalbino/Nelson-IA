@@ -22,7 +22,7 @@ export type AnalyzeRetirementEligibilityInput = z.infer<typeof AnalyzeRetirement
 
 const EligibilityResultSchema = z.object({
     isEligible: z.boolean().describe("Indica se o segurado é elegível para esta modalidade de aposentadoria."),
-    details: z.string().describe("Detalhes da análise, como tempo de contribuição calculado, idade, pontos, e o que falta se não for elegível."),
+    details: z.string().describe("Detalhes da análise, como tempo de contribuição calculado, idade, pontos, e o que falta se não for elegível. A fundamentação deve ser baseada nas regras da legislação previdenciária brasileira."),
     supportingDocuments: z.array(z.string()).describe("Documentos que suportam a conclusão ou que são necessários."),
 });
 
@@ -50,7 +50,7 @@ Analise os dados compilados fornecidos abaixo, que incluem resumos do CNIS, regi
 Dados Compilados do Segurado:
 {{{collectedData}}}
 
-Com base nesses dados, avalie a elegibilidade do segurado para as seguintes modalidades de aposentadoria:
+Com base nesses dados, avalie a elegibilidade do segurado para as seguintes modalidades de aposentadoria, **baseando-se estritamente nas regras da legislação previdenciária brasileira (Lei 8.213/91, EC 103/2019 e demais legislações aplicáveis)**:
 1.  **Aposentadoria por Idade**: Verifique idade e tempo de contribuição.
 2.  **Aposentadoria por Tempo de Contribuição**: Verifique o tempo total de contribuição e as regras de pedágio, se aplicável.
 3.  **Aposentadoria Especial**: Verifique o tempo de exposição a agentes nocivos conforme os dados do PPP.
