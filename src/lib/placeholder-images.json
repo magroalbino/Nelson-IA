@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "login-bg",
-      "description": "Abstract background for login page, showing scales of justice",
-      "imageUrl": "https://picsum.photos/seed/scales/1200/800",
-      "imageHint": "legal abstract"
+      "description": "Office of a lawyer with a window overlooking the city",
+      "imageUrl": "https://picsum.photos/seed/law-office/1800/1200",
+      "imageHint": "lawyer office"
     }
   ]
 }

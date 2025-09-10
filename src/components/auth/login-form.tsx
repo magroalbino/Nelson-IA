@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { ArrowRight } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -52,7 +53,7 @@ export function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Email Corporativo</FormLabel>
               <FormControl>
                 <Input placeholder="seu@email.com" {...field} />
               </FormControl>
@@ -81,8 +82,9 @@ export function LoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">
-          Login
+        <Button type="submit" className="w-full" size="lg">
+          Entrar na Plataforma
+          <ArrowRight />
         </Button>
       </form>
     </Form>
