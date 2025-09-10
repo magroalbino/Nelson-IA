@@ -5,6 +5,7 @@ import { generateLegalPetition } from "@/ai/flows/generate-legal-petition";
 import { summarizeCnisAnalysis } from "@/ai/flows/summarize-cnis-analysis";
 import { extractPapData } from "@/ai/flows/extract-pap-data";
 import { analyzePppDocument } from "@/ai/flows/analyze-ppp-document";
+import { analyzeRetirementEligibility } from "@/ai/flows/analyze-retirement-eligibility";
 
 // Schema for Legal Petition Generation
 const petitionSchema = z.object({
@@ -187,6 +188,65 @@ export async function analyzePppAction(
     console.error("Error analyzing PPP:", error);
     return {
       message: "Ocorreu um erro ao analisar o documento PPP. Verifique o formato do arquivo ou tente novamente.",
+    };
+  }
+}
+
+// Schema for Retirement Eligibility Analysis
+const retirementSchema = z.object({
+  collectedData: z.string().min(50, "Por favor, insira os dados consolidados do segurado."),
+});
+
+interface RetirementState {
+  errors?: {
+    collectedData?: string[];
+  };
+  message?: string | null;
+  data?: {
+    geralSummary: string;
+    retirementByAge: {
+      isEligible: boolean;
+      details: string;
+      supportingDocuments: string[];
+    };
+    retirementByContributionTime: {
+      isEligible: boolean;
+      details: string;
+      supportingDocuments: string[];
+    };
+    specialRetirement: {
+      isEligible: boolean;
+      details: string;
+      supportingDocuments: string[];
+    };
+  } | null;
+}
+
+export async function analyzeRetirementAction(
+  prevState: RetirementState,
+  formData: FormData
+): Promise<RetirementState> {
+  const validatedFields = retirementSchema.safeParse({
+    collectedData: formData.get("collectedData"),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "Dados inválidos.",
+    };
+  }
+
+  try {
+    const result = await analyzeRetirementEligibility(validatedFields.data);
+    return {
+      message: "Análise de elegibilidade concluída!",
+      data: result,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      message: "Falha ao realizar a análise. Tente novamente.",
     };
   }
 }
