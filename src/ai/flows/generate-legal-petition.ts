@@ -13,6 +13,28 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+// Tool Definition: This is how we define a tool the AI can use.
+// In a real scenario, this function would make a fetch() call to an external API.
+const getSalarioMinimoAtual = ai.defineTool(
+  {
+    name: 'getSalarioMinimoAtual',
+    description: 'Obtém o valor atual do salário mínimo nacional no Brasil. Útil para cálculos de valor de causa ou para pedidos de Benefício de Prestação Continuada (BPC).',
+    inputSchema: z.object({}),
+    outputSchema: z.object({
+        valor: z.number().describe('O valor numérico do salário mínimo.'),
+        vigencia: z.string().describe('O ano de vigência do valor, ex: "2024".')
+    }),
+  },
+  async () => {
+    // << Em um cenário real, aqui você faria a chamada para a API externa >>
+    // Ex: const response = await fetch('https://api.dados.gov.br/...');
+    // const data = await response.json();
+    console.log('Ferramenta getSalarioMinimoAtual foi chamada pela IA!');
+    return { valor: 1412.00, vigencia: "2024" };
+  }
+)
+
+
 const GenerateLegalPetitionInputSchema = z.object({
   seguradoData: z
     .string()
@@ -41,6 +63,8 @@ export async function generateLegalPetition(
 
 const prompt = ai.definePrompt({
   name: 'generateLegalPetitionPrompt',
+  // We make the tool available to the AI model here.
+  tools: [getSalarioMinimoAtual],
   input: {
     schema: GenerateLegalPetitionInputSchema,
   },
@@ -58,18 +82,20 @@ Sua tarefa é gerar uma petição (do tipo '{{{tipoPetição}}}') com base nos d
     *   Vínculos empregatícios no CNIS ou PAP que possuem pendências ou que precisam ser comprovados.
     *   O resultado da análise de elegibilidade, focando nos requisitos que foram ou não atendidos.
 
-2.  **Construa a Argumentação Jurídica:**
+2.  **Use Ferramentas, se necessário:** Se precisar de informações externas atualizadas, como o valor do salário mínimo para um cálculo, utilize as ferramentas disponíveis. Incorpore o resultado da ferramenta de forma natural no texto da petição.
+
+3.  **Construa a Argumentação Jurídica:**
     *   Não apenas preencha um modelo. Crie uma narrativa coesa e lógica.
     *   Inicie com um resumo dos fatos.
     *   Para cada ponto identificado (ex: pedido de reconhecimento de tempo especial), desenvolva um tópico específico na petição.
     *   Fundamente cada tópico com a legislação brasileira pertinente (ex: Lei 8.213/91, Decretos, etc.) e, se possível, mencione teses jurídicas relevantes (ex: Tema 1031 do STJ para EPI).
 
-3.  **Estruture a Petição:**
+4.  **Estruture a Petição:**
     *   Use formatação clara (negrito, parágrafos, listas) para facilitar a leitura.
     *   Inclua campos para os dados do segurado (Nome, CPF, NIT) e o endereçamento correto (Ex: "AO CHEFE DA AGÊNCIA DA PREVIDÊNCIA SOCIAL EM [CIDADE]" para administrativo ou "EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) FEDERAL DO JUIZADO ESPECIAL FEDERAL DE [CIDADE/UF]" para judicial).
     *   Finalize com os pedidos claros e objetivos (ex: "requer o reconhecimento do período especial de X a Y", "a concessão do benefício de aposentadoria Z", etc.).
 
-4.  **Sugira Documentos Essenciais:** Com base nos argumentos que você montou, liste os documentos que são **essenciais** para comprovar o direito (ex: "PPP da empresa X", "Laudo Técnico das Condições Ambientais de Trabalho (LTCAT)", "Carteira de Trabalho", "Procuração", etc.).
+5.  **Sugira Documentos Essenciais:** Com base nos argumentos que você montou, liste os documentos que são **essenciais** para comprovar o direito (ex: "PPP da empresa X", "Laudo Técnico das Condições Ambientais de Trabalho (LTCAT)", "Carteira de Trabalho", "Procuração", etc.).
 
 **Dados do Segurado:**
 {{{seguradoData}}}
