@@ -28,15 +28,15 @@ const initialState = {
 function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending || disabled} className="w-full md:w-auto">
+    <Button type="submit" disabled={pending || disabled}>
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Analisando Documento...
+          Analisando...
         </>
       ) : (
         <>
-         <FileScan className="mr-2"/>
+         <FileScan className="mr-2 h-4 w-4"/>
          Analisar PPP
         </>
       )}
@@ -64,14 +64,14 @@ export default function PppAnalyzerPage() {
 
   return (
     <div className="grid gap-8">
-      <Card className="shadow-lg border-primary/20">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl font-bold text-primary">
-            <ShieldAlert className="w-8 h-8" />
+          <CardTitle className="flex items-center gap-2">
+            <ShieldAlert />
             Analisador de Perfil Profissiográfico Previdenciário (PPP)
           </CardTitle>
-          <CardDescription className="text-lg">
-            Faça o upload do documento PPP para extrair automaticamente os dados de exposição a agentes nocivos e obter um relatório detalhado.
+          <CardDescription>
+            Faça o upload do documento PPP para extrair e analisar automaticamente os dados de exposição a agentes nocivos.
           </CardDescription>
         </CardHeader>
         <form action={formAction}>

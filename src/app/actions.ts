@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { generateLegalPetition } from "@/ai/flows/generate-legal-petition";
 import { summarizeCnisAnalysis } from "@/ai/flows/summarize-cnis-analysis";
-import { extractPapData } from "@/ai/flows/extract-pap-data";
+import { extractPapData } from "@/aiflows/extract-pap-data";
 import { analyzePppDocument } from "@/ai/flows/analyze-ppp-document";
 import { analyzeRetirementEligibility } from "@/ai/flows/analyze-retirement-eligibility";
 
