@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn } from "lucide-react";
 import { useState } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -39,19 +41,39 @@ export function LoginForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    console.log(values);
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
         title: "Login bem-sucedido!",
         description: "Redirecionando para o seu dashboard...",
       });
       router.push('/dashboard');
+    } catch (error: any) {
+      console.error("Firebase Auth Error:", error);
+      let errorMessage = "Ocorreu um erro ao fazer login.";
+      switch (error.code) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          errorMessage = 'Email ou senha inválidos.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'O formato do email é inválido.';
+          break;
+        default:
+          errorMessage = 'Falha na autenticação. Tente novamente mais tarde.';
+          break;
+      }
+      toast({
+        title: "Erro de Login",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   }
 
   return (
