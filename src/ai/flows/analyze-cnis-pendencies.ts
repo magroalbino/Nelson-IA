@@ -50,7 +50,7 @@ Sua análise deve ser dividida em duas partes:
 **1. Lista de Pendências e Indicadores:**
 Para cada pendência ou indicador encontrado (ex: PEXT, PREC-MENOR-MIN, AEXT-VI, PADM-EMPR, etc.), você deve extrair e estruturar as seguintes informações:
 - **indicator**: A sigla exata do indicador.
-- **description**: Uma explicação clara e concisa do que essa pendência significa para o segurado e seu processo de aposentadoria, conforme as normativas do INSS.
+- **description**: Uma explicação clara e objetiva do que essa pendência significa para o segurado e seu processo de aposentadoria, conforme as normativas do INSS.
 - **recommendedAction**: Qual é a ação recomendada ou quais documentos são necessários para tratar ou resolver essa pendência. Seja específico e prático, de acordo com os procedimentos oficiais.
 - **relatedPeriods**: Uma lista dos períodos (no formato "DD/MM/AAAA - DD/MM/AAAA") que estão associados a essa pendência.
 
