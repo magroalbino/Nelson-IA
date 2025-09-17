@@ -11,12 +11,12 @@ export default function Home() {
       <div className="flex items-center justify-center py-12 bg-background">
         <div className="mx-auto grid w-[380px] gap-8 p-4">
            <div className="flex flex-col items-center text-center gap-2 mb-4">
-              <Logo className="h-12 w-12 text-primary" />
+              <Logo className="h-16 w-16 text-primary" />
               <h1 className="text-3xl font-bold font-heading text-primary tracking-tighter">
-                Previdenciarista AI
+                Túlio IA
               </h1>
               <p className="text-balance text-muted-foreground">
-                Bem-vindo de volta! Acesse sua conta para continuar.
+                Bem-vindo de volta! Sou seu assistente previdenciário.
               </p>
           </div>
           <LoginForm />
@@ -36,7 +36,7 @@ export default function Home() {
          <div className="absolute bottom-0 left-0 right-0 p-8 text-white bg-gradient-to-t from-black/80 via-black/50 to-transparent">
             <h2 className="text-2xl font-bold font-heading">Decisões mais rápidas e inteligentes.</h2>
             <p className="mt-2 text-lg text-white/80 max-w-xl">
-              Nossa plataforma de IA analisa documentos, identifica oportunidades e gera petições, otimizando seu tempo e aumentando sua eficiência.
+              Eu analiso documentos, identifico oportunidades e gero petições, otimizando seu tempo e aumentando sua eficiência.
             </p>
         </div>
       </div>

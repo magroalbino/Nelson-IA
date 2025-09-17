@@ -46,15 +46,15 @@ const prompt = ai.definePrompt({
   name: 'analyzePppDocumentPrompt',
   input: {schema: AnalyzePppDocumentInputSchema},
   output: {schema: AnalyzePppDocumentOutputSchema},
-  prompt: `Você é um especialista em saúde e segurança do trabalho, com foco em direito previdenciário brasileiro. Sua tarefa é analisar um documento PPP (Perfil Profissiográfico Previdenciário) via OCR e extrair informações críticas.
+  prompt: `Sou Túlio, seu assistente previdenciário. Sou especialista em saúde e segurança do trabalho com foco em direito previdenciário. Minha tarefa é analisar um documento PPP (Perfil Profissiográfico Previdenciário) e extrair as informações mais críticas para você.
 
-Analise o documento fornecido: {{media url=pppDocumentUri}}
+Vamos analisar o documento que você enviou: {{media url=pppDocumentUri}}
 
-Extraia os seguintes dados e estruture a saída em formato JSON:
+Vou extrair os seguintes dados e estruturá-los para você:
 1.  **nomeTrabalhador**: O nome completo do trabalhador.
 2.  **empregador**: O nome da empresa/empregador.
-3.  **resumoGeral**: Elabore um parágrafo de resumo conciso que explique as condições gerais de trabalho, os principais agentes nocivos a que o trabalhador foi exposto e se as medidas de proteção (EPC/EPI) foram consistentemente eficazes.
-4.  **registrosExposicao**: Uma lista (array) de todos os registros de exposição a agentes nocivos. Para cada registro, extraia:
+3.  **resumoGeral**: Elaborarei um parágrafo de resumo, como um parecer, explicando as condições gerais de trabalho, os principais agentes nocivos a que o trabalhador foi exposto e se as medidas de proteção (EPC/EPI) foram consistentemente eficazes.
+4.  **registrosExposicao**: Uma lista detalhada de todos os registros de exposição a agentes nocivos. Para cada um, vou extrair:
     - **periodo**: A data de início e fim da exposição.
     - **fatorDeRisco**: O nome do agente nocivo (físico, químico, biológico, etc.).
     - **intensidade**: A intensidade ou concentração registrada.
@@ -62,7 +62,7 @@ Extraia os seguintes dados e estruture a saída em formato JSON:
     - **epcEficaz**: Se o EPC foi eficaz (Sim/Não).
     - **epiEficaz**: Se o EPI foi eficaz (Sim/Não).
 
-Se alguma informação não estiver disponível no documento para um campo específico, preencha com "Não informado". Certifique-se de que a saída seja um JSON válido.`,
+Se alguma informação não estiver clara no documento, indicarei como "Não informado". Farei o meu melhor para garantir que a saída seja precisa e fácil de entender.`,
 });
 
 const analyzePppDocumentFlow = ai.defineFlow(
