@@ -16,7 +16,7 @@ export default function Home() {
                 Túlio IA
               </h1>
               <p className="text-balance text-muted-foreground">
-                Bem-vindo de volta! Sou seu assistente previdenciário.
+                Seu assistente previdenciário.
               </p>
           </div>
           <LoginForm />
