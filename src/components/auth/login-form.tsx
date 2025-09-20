@@ -19,7 +19,6 @@ import { ArrowRight, LogIn } from "lucide-react";
 import { useState } from "react";
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
-import { Separator } from "../ui/separator";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -108,27 +107,7 @@ export function LoginForm() {
 
   return (
     <div className="grid gap-6">
-      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
-        {isGoogleLoading ? (
-            <LogIn className="animate-pulse mr-2" />
-        ) : (
-            <GoogleIcon className="mr-2 h-4 w-4"/>
-        )}
-        Entrar com Google
-      </Button>
-
-       <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Ou continue com
-          </span>
-        </div>
-      </div>
-
-      <Form {...form}>
+       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
           <FormField
             control={form.control}
@@ -179,6 +158,26 @@ export function LoginForm() {
           </Button>
         </form>
       </Form>
+
+       <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Ou continue com
+          </span>
+        </div>
+      </div>
+      
+      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+        {isGoogleLoading ? (
+            <LogIn className="animate-pulse mr-2" />
+        ) : (
+            <GoogleIcon className="mr-2 h-4 w-4"/>
+        )}
+        Entrar com Google
+      </Button>
     </div>
   );
 }
