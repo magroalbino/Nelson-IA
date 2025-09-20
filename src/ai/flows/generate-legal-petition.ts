@@ -1,5 +1,3 @@
-// A Genkit flow for generating legal petitions and procedural documents.
-
 'use server';
 
 /**
@@ -41,10 +39,7 @@ const GenerateLegalPetitionInputSchema = z.object({
     .describe('All data related to the client, CNIS, PAP, PPP, and eligibility analysis.'),
   tipoPetição: z
     .string()
--    .describe(
--      'The type of legal petition to generate (administrativo ou judicial).'
--    ),
-+    .describe('The type of legal petition to generate (administrativo ou judicial).'),
+    .describe('The type of legal petition to generate (administrativo ou judicial).'),
 });
 export type GenerateLegalPetitionInput = z.infer<typeof GenerateLegalPetitionInputSchema>;
 
@@ -72,7 +67,7 @@ const prompt = ai.definePrompt({
   output: {
     schema: GenerateLegalPetitionOutputSchema,
   },
-  prompt: `Sou Túlio, seu assistente previdenciário. Como um advogado de elite, sou especialista em redigir peças processuais e administrativas com alta precisão técnica e argumentativa, sempre com base na legislação brasileira.
+  prompt: `Olá! Sou o Túlio, seu assistente previdenciário. Como um advogado de elite, sou especialista em redigir peças processuais e administrativas com alta precisão técnica e argumentativa, sempre com base na legislação brasileira.
 
 Minha tarefa é gerar uma petição (do tipo '{{{tipoPetição}}}') com base nos dados consolidados do segurado que você me forneceu.
 

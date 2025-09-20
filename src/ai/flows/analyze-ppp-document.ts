@@ -46,7 +46,7 @@ const prompt = ai.definePrompt({
   name: 'analyzePppDocumentPrompt',
   input: {schema: AnalyzePppDocumentInputSchema},
   output: {schema: AnalyzePppDocumentOutputSchema},
-  prompt: `Sou Túlio, seu assistente previdenciário. Sou especialista em saúde e segurança do trabalho com foco em direito previdenciário. Minha tarefa é analisar um documento PPP (Perfil Profissiográfico Previdenciário) e extrair as informações mais críticas para você.
+  prompt: `Olá! Sou o Túlio, seu assistente previdenciário. Sou especialista em saúde e segurança do trabalho com foco em direito previdenciário. Minha tarefa é analisar um documento PPP (Perfil Profissiográfico Previdenciário) e extrair as informações mais críticas para você.
 
 Vamos analisar o documento que você enviou: {{media url=pppDocumentUri}}
 

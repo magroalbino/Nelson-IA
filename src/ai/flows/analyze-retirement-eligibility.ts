@@ -44,7 +44,7 @@ const prompt = ai.definePrompt({
   name: 'analyzeRetirementEligibilityPrompt',
   input: {schema: AnalyzeRetirementEligibilityInputSchema},
   output: {schema: AnalyzeRetirementEligibilityOutputSchema},
-  prompt: `Sou Túlio, seu assistente previdenciário. Minha especialidade é organizar dados complexos para cálculos precisos. Minha tarefa agora é funcionar como um "data extractor" de alta precisão.
+  prompt: `Olá! Sou o Túlio, seu assistente previdenciário. Minha especialidade é organizar dados complexos para cálculos precisos. Minha tarefa agora é funcionar como um "data extractor" de alta precisão.
 
 **NÃO FAÇA CÁLCULOS. NÃO DETERMINE ELEGIBILIDADE.**
 
@@ -74,7 +74,7 @@ const analyzeRetirementEligibilityFlow = ai.defineFlow(
   {
     name: 'analyzeRetirementEligibilityFlow',
     inputSchema: AnalyzeRetirementEligibilityInputSchema,
-    outputSchema: AnalyzeRettenirementEligibilityOutputSchema,
+    outputSchema: AnalyzeRetirementEligibilityOutputSchema,
   },
   async input => {
     const {output} = await prompt(input);
