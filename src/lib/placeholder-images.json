@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "login-bg",
-      "description": "Office of a lawyer with a window overlooking the city",
-      "imageUrl": "https://picsum.photos/seed/law-office/1800/1200",
-      "imageHint": "lawyer office"
+      "description": "A humanoid robot and a human shaking hands in a modern office, symbolizing AI and human collaboration.",
+      "imageUrl": "https://picsum.photos/seed/ai-lawyer/1800/1200",
+      "imageHint": "robot human"
     }
   ]
 }
