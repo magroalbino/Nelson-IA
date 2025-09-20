@@ -41,9 +41,10 @@ const GenerateLegalPetitionInputSchema = z.object({
     .describe('All data related to the client, CNIS, PAP, PPP, and eligibility analysis.'),
   tipoPetição: z
     .string()
-    .describe(
-      'The type of legal petition to generate (administrativo ou judicial).'
-    ),
+-    .describe(
+-      'The type of legal petition to generate (administrativo ou judicial).'
+-    ),
++    .describe('The type of legal petition to generate (administrativo ou judicial).'),
 });
 export type GenerateLegalPetitionInput = z.infer<typeof GenerateLegalPetitionInputSchema>;
 
