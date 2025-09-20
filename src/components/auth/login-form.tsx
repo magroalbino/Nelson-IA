@@ -17,8 +17,16 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn } from "lucide-react";
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
+import { Separator } from "../ui/separator";
+
+const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.133H12.48z" fill="currentColor"/>
+    </svg>
+);
+
 
 const formSchema = z.object({
   email: z.string().email({
@@ -32,6 +40,7 @@ const formSchema = z.object({
 export function LoginForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -76,57 +85,100 @@ export function LoginForm() {
     }
   }
 
+  async function handleGoogleSignIn() {
+    setIsGoogleLoading(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+       toast({
+        title: "Login bem-sucedido!",
+        description: "Redirecionando para o seu dashboard...",
+      });
+      router.push('/dashboard');
+    } catch (error: any) {
+       console.error("Google Auth Error:", error);
+       toast({
+        title: "Erro de Login com Google",
+        description: error.code === 'auth/popup-closed-by-user' ? "A janela de login foi fechada." : "Não foi possível fazer login com o Google.",
+        variant: "destructive",
+      });
+    } finally {
+        setIsGoogleLoading(false);
+    }
+  }
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="seu@email.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center">
-                <FormLabel>Senha</FormLabel>
-                <a
-                  href="#"
-                  className="ml-auto inline-block text-sm text-primary/80 underline-offset-4 hover:text-primary hover:underline"
-                >
-                  Esqueceu sua senha?
-                </a>
-              </div>
-              <FormControl>
-                <Input type="password" placeholder="Sua senha" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full group" size="lg" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <LogIn className="animate-pulse mr-2" />
-              <span>Entrando...</span>
-            </>
-          ) : (
-             <>
-              <span>Entrar na Plataforma</span>
-              <ArrowRight className="transition-transform group-hover:translate-x-1" />
-            </>
-          )}
-        </Button>
-      </form>
-    </Form>
+    <div className="grid gap-6">
+      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+        {isGoogleLoading ? (
+            <LogIn className="animate-pulse mr-2" />
+        ) : (
+            <GoogleIcon className="mr-2 h-4 w-4"/>
+        )}
+        Entrar com Google
+      </Button>
+
+       <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Ou continue com
+          </span>
+        </div>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input placeholder="seu@email.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center">
+                  <FormLabel>Senha</FormLabel>
+                  <a
+                    href="#"
+                    className="ml-auto inline-block text-sm text-primary/80 underline-offset-4 hover:text-primary hover:underline"
+                  >
+                    Esqueceu sua senha?
+                  </a>
+                </div>
+                <FormControl>
+                  <Input type="password" placeholder="Sua senha" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full group" size="lg" disabled={isLoading || isGoogleLoading}>
+            {isLoading ? (
+              <>
+                <LogIn className="animate-pulse mr-2" />
+                <span>Entrando...</span>
+              </>
+            ) : (
+              <>
+                <span>Entrar na Plataforma</span>
+                <ArrowRight className="transition-transform group-hover:translate-x-1" />
+              </>
+            )}
+          </Button>
+        </form>
+      </Form>
+    </div>
   );
 }
