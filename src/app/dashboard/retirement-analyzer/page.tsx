@@ -13,12 +13,13 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, FileClock, HeartPulse, HelpCircle, Loader2, ServerCrash, ShieldCheck, Tractor, XCircle } from "lucide-react";
+import { FileClock, Loader2, ServerCrash, User, Calendar, ListChecks } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const initialState = {
   message: null,
@@ -33,41 +34,15 @@ function SubmitButton() {
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Analisando Elegibilidade...
+          Analisando e Extraindo Dados...
         </>
       ) : (
-        "Analisar Elegibilidade"
+        "Extrair Dados para Cálculo"
       )}
     </Button>
   );
 }
 
-const EligibilityCard = ({ title, icon, result }: { title: string, icon: React.ReactNode, result: { isEligible: boolean; details: string; supportingDocuments: string[]; } }) => (
-    <Card>
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-            <div className="space-y-1.5">
-                <CardTitle className="text-lg flex items-center gap-2">{icon} {title}</CardTitle>
-            </div>
-            <Badge variant={result.isEligible ? 'default' : 'destructive'} className="flex gap-1 items-center">
-                 {result.isEligible ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}
-                {result.isEligible ? 'Elegível' : 'Não Elegível'}
-            </Badge>
-        </CardHeader>
-        <CardContent>
-            <p className="text-sm text-muted-foreground">{result.details}</p>
-            {result.supportingDocuments.length > 0 && (
-                <div className="mt-4">
-                    <h4 className="text-xs font-semibold uppercase text-muted-foreground">Documentos Chave</h4>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                    {result.supportingDocuments.map((doc, i) => (
-                       <Badge key={i} variant="secondary">{doc}</Badge>
-                    ))}
-                    </div>
-                </div>
-            )}
-        </CardContent>
-    </Card>
-)
 
 export default function RetirementAnalyzerPage() {
   const [state, formAction] = useFormState(analyzeRetirementAction, initialState);
@@ -88,7 +63,7 @@ export default function RetirementAnalyzerPage() {
         <CardHeader>
           <CardTitle>Analisador de Elegibilidade de Aposentadoria</CardTitle>
           <CardDescription>
-            Consolide os dados do CNIS, PAP e PPP em um único campo para uma análise completa sobre a elegibilidade de aposentadoria do segurado.
+            Consolide os dados do CNIS, PAP e PPP em um único campo. A IA irá extrair e estruturar todas as informações relevantes para que o cálculo preciso da aposentadoria possa ser feito.
           </CardDescription>
         </CardHeader>
         <form action={formAction}>
@@ -125,25 +100,65 @@ export default function RetirementAnalyzerPage() {
       {state.data && (
         <Card>
             <CardHeader>
-                <CardTitle>Resultado da Análise de Elegibilidade</CardTitle>
-                <CardDescription>Com base nos dados fornecidos, este é o panorama previdenciário do segurado.</CardDescription>
+                <CardTitle>Dados Extraídos para Cálculo</CardTitle>
+                <CardDescription>A IA analisou os documentos e estruturou os seguintes dados. Estes são os insumos para a rotina de cálculo preciso.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <Alert>
-                    <ShieldCheck className="h-4 w-4" />
-                    <AlertTitle>Resumo da Situação Previdenciária</AlertTitle>
-                    <AlertDescription>
-                        {state.data.geralSummary}
+                 <div className="grid md:grid-cols-2 gap-4">
+                    <Alert>
+                      <User className="h-4 w-4" />
+                      <AlertTitle>Segurado</AlertTitle>
+                      <AlertDescription>{state.data.nomeSegurado}</AlertDescription>
+                    </Alert>
+                     <Alert>
+                      <Calendar className="h-4 w-4" />
+                      <AlertTitle>Data de Nascimento</AlertTitle>
+                      <AlertDescription>{state.data.dataNascimento}</AlertDescription>
+                    </Alert>
+                </div>
+                
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                    <FileClock /> Vínculos de Contribuição
+                  </h3>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Data de Início</TableHead>
+                                <TableHead>Data de Fim</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Fator de Risco</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {state.data.vinculos.map((vinculo, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>{vinculo.startDate}</TableCell>
+                                    <TableCell>{vinculo.endDate}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={vinculo.type === 'especial' ? 'destructive' : 'secondary'}>
+                                            {vinculo.type === 'especial' ? 'Especial' : 'Contribuição'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{vinculo.fatorRisco || 'N/A'}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                  </div>
+                </div>
+
+                <Alert variant="default" className="bg-muted/50">
+                    <ListChecks className="h-4 w-4" />
+                    <AlertTitle>Observações Importantes para o Cálculo</AlertTitle>
+                    <AlertDescription className="mt-2">
+                        <p className="leading-relaxed whitespace-pre-wrap">{state.data.observacoes}</p>
                     </AlertDescription>
                 </Alert>
 
-                <Separator />
-                
-                <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-4">
-                  <EligibilityCard title="Aposentadoria por Idade" icon={<Tractor size={20} />} result={state.data.retirementByAge} />
-                  <EligibilityCard title="Aposentadoria por Tempo de Contribuição" icon={<FileClock size={20} />} result={state.data.retirementByContributionTime} />
-                  <EligibilityCard title="Aposentadoria Especial" icon={<HeartPulse size={20} />} result={state.data.specialRetirement} />
-                </div>
             </CardContent>
         </Card>
       )}

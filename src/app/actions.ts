@@ -211,22 +211,15 @@ interface RetirementState {
   };
   message?: string | null;
   data?: {
-    geralSummary: string;
-    retirementByAge: {
-      isEligible: boolean;
-      details: string;
-      supportingDocuments: string[];
-    };
-    retirementByContributionTime: {
-      isEligible: boolean;
-      details: string;
-      supportingDocuments: string[];
-    };
-    specialRetirement: {
-      isEligible: boolean;
-      details: string;
-      supportingDocuments: string[];
-    };
+    nomeSegurado: string;
+    dataNascimento: string;
+    vinculos: {
+        type: 'contribuicao' | 'especial';
+        startDate: string;
+        endDate: string;
+        fatorRisco?: string;
+    }[];
+    observacoes: string;
   } | null;
 }
 

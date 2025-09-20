@@ -20,17 +20,18 @@ const AnalyzeRetirementEligibilityInputSchema = z.object({
 });
 export type AnalyzeRetirementEligibilityInput = z.infer<typeof AnalyzeRetirementEligibilityInputSchema>;
 
-const EligibilityResultSchema = z.object({
-    isEligible: z.boolean().describe("Indica se o segurado é elegível para esta modalidade de aposentadoria."),
-    details: z.string().describe("Detalhes da análise, como tempo de contribuição calculado, idade, pontos, e o que falta se não for elegível. A fundamentação deve ser baseada nas regras da legislação previdenciária brasileira."),
-    supportingDocuments: z.array(z.string()).describe("Documentos que suportam a conclusão ou que são necessários."),
+const VinculoSchema = z.object({
+    type: z.enum(['contribuicao', 'especial']).describe("Tipo de vínculo: 'contribuicao' para tempo comum, 'especial' para tempo com exposição a agentes nocivos."),
+    startDate: z.string().describe("Data de início do período no formato AAAA-MM-DD."),
+    endDate: z.string().describe("Data de fim do período no formato AAAA-MM-DD."),
+    fatorRisco: z.string().optional().describe("Agente de risco, se o tipo for 'especial'."),
 });
 
 const AnalyzeRetirementEligibilityOutputSchema = z.object({
-  geralSummary: z.string().describe("Um resumo geral da situação previdenciária do segurado com base nos dados fornecidos."),
-  retirementByAge: EligibilityResultSchema.describe("Análise para aposentadoria por idade."),
-  retirementByContributionTime: EligibilityResultSchema.describe("Análise para aposentadoria por tempo de contribuição."),
-  specialRetirement: EligibilityResultSchema.describe("Análise para aposentadoria especial (considerando exposição a agentes nocivos)."),
+  nomeSegurado: z.string().describe("O nome completo do segurado."),
+  dataNascimento: z.string().describe("A data de nascimento do segurado no formato AAAA-MM-DD."),
+  vinculos: z.array(VinculoSchema).describe("Uma lista de todos os vínculos de contribuição, comuns e especiais, extraídos dos documentos."),
+  observacoes: z.string().describe("Um campo de texto para observações importantes extraídas dos documentos que podem impactar o cálculo, como indicadores do CNIS que precisam de atenção (ex: 'PEXT', 'PREC-MENOR-MIN') ou informações sobre EPI/EPC do PPP.")
 });
 export type AnalyzeRetirementEligibilityOutput = z.infer<typeof AnalyzeRetirementEligibilityOutputSchema>;
 
@@ -43,33 +44,37 @@ const prompt = ai.definePrompt({
   name: 'analyzeRetirementEligibilityPrompt',
   input: {schema: AnalyzeRetirementEligibilityInputSchema},
   output: {schema: AnalyzeRetirementEligibilityOutputSchema},
-  prompt: `Sou Túlio, seu assistente previdenciário. Como um advogado especialista, minha tarefa é realizar uma análise de elegibilidade para aposentadoria.
+  prompt: `Sou Túlio, seu assistente previdenciário. Minha especialidade é organizar dados complexos para cálculos precisos. Minha tarefa agora é funcionar como um "data extractor" de alta precisão.
 
-Vou analisar os dados compilados que você forneceu, cruzando informações do CNIS, PAP e PPP para montar um panorama completo.
+**NÃO FAÇA CÁLCULOS. NÃO DETERMINE ELEGIBILIDADE.**
+
+Sua única função é analisar os dados compilados que você recebeu e extrair as seguintes informações de forma estruturada, no formato JSON solicitado.
 
 **Dados Compilados do Segurado:**
 {{{collectedData}}}
 
-Com base nesses dados, avaliarei a elegibilidade do segurado para as seguintes modalidades de aposentadoria, **baseando-me estritamente nas regras da legislação previdenciária brasileira (Lei 8.213/91, EC 103/2019 e demais legislações aplicáveis)**:
-1.  **Aposentadoria por Idade**: Verificarei idade e tempo de contribuição.
-2.  **Aposentadoria por Tempo de Contribuição**: Verificarei o tempo total de contribuição e as regras de pedágio, se aplicável.
-3.  **Aposentadoria Especial**: Verificarei o tempo de exposição a agentes nocivos conforme os dados do PPP.
+**Informações a serem extraídas:**
 
-Para cada modalidade, vou detalhar:
-- **isEligible**: Um booleano (true/false) para você saber rapidamente se há o direito.
-- **details**: Minha explicação clara, indicando o tempo de contribuição que calculei, a idade na data da análise, os pontos (se aplicável), e o que falta para atingir os requisitos se a pessoa ainda não for elegível.
-- **supportingDocuments**: Uma lista dos documentos que foram ou seriam essenciais para esta análise.
+1.  **nomeSegurado**: Extraia o nome completo do segurado.
+2.  **dataNascimento**: Extraia a data de nascimento do segurado e formate-a como AAAA-MM-DD.
+3.  **vinculos**: Crie uma lista de todos os períodos de trabalho/contribuição. Para cada período, identifique:
+    *   **type**: Classifique como 'contribuicao' (se for um tempo de contribuição comum) ou 'especial' (se houver exposição a agentes nocivos, baseado no PPP).
+    *   **startDate**: Data de início no formato AAAA-MM-DD.
+    *   **endDate**: Data de fim no formato AAAA-MM-DD.
+    *   **fatorRisco**: Se o tipo for 'especial', mencione qual foi o agente de risco principal (ex: "Ruído", "Sílica").
+4.  **observacoes**: Crie um resumo em texto com pontos importantes que um calculista precisaria saber. Inclua coisas como:
+    *   Indicadores de pendência do CNIS (ex: "PEXT", "AEXT-VI", "PREC-MENOR-MIN").
+    *   Informações sobre a eficácia de EPI/EPC do PPP.
+    *   Qualquer outra informação que pareça crítica para um cálculo previdenciário preciso.
 
-Ao final, fornecerei um **geralSummary**, minha visão geral e conclusiva sobre a situação previdenciária do segurado.
-
-Serei preciso e me basearei estritamente nas regras da previdência social brasileira. Se faltarem dados para uma análise conclusiva, indicarei isso nos detalhes para que possamos investigar mais a fundo.`,
+Sua saída deve ser apenas o objeto JSON estruturado. A precisão na extração das datas e dos tipos de vínculo é fundamental para o próximo passo, que será o cálculo matemático feito pelo sistema.`,
 });
 
 const analyzeRetirementEligibilityFlow = ai.defineFlow(
   {
     name: 'analyzeRetirementEligibilityFlow',
     inputSchema: AnalyzeRetirementEligibilityInputSchema,
-    outputSchema: AnalyzeRetirementEligibilityOutputSchema,
+    outputSchema: AnalyzeRettenirementEligibilityOutputSchema,
   },
   async input => {
     const {output} = await prompt(input);
