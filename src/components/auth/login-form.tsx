@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn } from "lucide-react";
 import { useState } from "react";
-import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -104,6 +104,40 @@ export function LoginForm() {
         setIsGoogleLoading(false);
     }
   }
+  
+  async function handlePasswordReset() {
+    const email = form.getValues("email");
+    const emailValidation = z.string().email().safeParse(email);
+
+    if (!emailValidation.success) {
+      form.setError("email", { type: "manual", message: "Por favor, insira um e-mail válido para redefinir a senha." });
+      toast({
+        title: "E-mail inválido",
+        description: "Por favor, insira um e-mail válido no campo de e-mail antes de solicitar a redefinição de senha.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "E-mail de redefinição enviado!",
+        description: "Verifique sua caixa de entrada (e a pasta de spam) para o link de redefinição de senha.",
+      });
+    } catch (error: any) {
+      console.error("Password Reset Error:", error);
+      let errorMessage = "Ocorreu um erro ao enviar o e-mail de redefinição.";
+       if (error.code === 'auth/user-not-found') {
+        errorMessage = 'Nenhuma conta encontrada com este endereço de e-mail.';
+      }
+      toast({
+        title: "Falha ao Redefinir Senha",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  }
 
   return (
     <div className="grid gap-6">
@@ -129,12 +163,13 @@ export function LoginForm() {
               <FormItem>
                 <div className="flex items-center">
                   <FormLabel>Senha</FormLabel>
-                  <a
-                    href="#"
-                    className="ml-auto inline-block text-sm text-primary/80 underline-offset-4 hover:text-primary hover:underline"
+                  <button
+                    type="button"
+                    onClick={handlePasswordReset}
+                    className="ml-auto inline-block text-sm text-primary/80 underline-offset-4 hover:text-primary hover:underline focus:outline-none"
                   >
                     Esqueceu sua senha?
-                  </a>
+                  </button>
                 </div>
                 <FormControl>
                   <Input type="password" placeholder="Sua senha" {...field} />
