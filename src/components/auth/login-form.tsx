@@ -150,7 +150,7 @@ export function LoginForm() {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="seu@email.com" {...field} />
+                  <Input placeholder="Seu@email.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -162,7 +162,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center">
-                  <FormLabel>senha</FormLabel>
+                  <FormLabel>Senha</FormLabel>
                   <button
                     type="button"
                     onClick={handlePasswordReset}
