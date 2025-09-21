@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Gavel, Loader2, ServerCrash, FileText, Paperclip } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 
 const initialState = {
@@ -49,14 +49,13 @@ function SubmitButton() {
 
 export default function DocumentGeneratorPage() {
   const [state, formAction] = useFormState(generatePetitionAction, initialState);
-  const [tipoPetição, setTipoPetição] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (state.message) {
       toast({
-        title: state.errors ? "Erro" : "Sucesso!",
+        title: state.errors || !state.data ? "Erro" : "Sucesso!",
         description: state.message,
-        variant: state.errors ? "destructive" : "default",
+        variant: state.errors || !state.data ? "destructive" : "default",
       });
     }
   }, [state]);
@@ -89,7 +88,7 @@ export default function DocumentGeneratorPage() {
             </div>
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Label htmlFor="tipoPetição">Tipo de Petição</Label>
-              <Select name="tipoPetição" onValueChange={setTipoPetição}>
+              <Select name="tipoPetição">
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
@@ -98,7 +97,6 @@ export default function DocumentGeneratorPage() {
                   <SelectItem value="judicial">Judicial</SelectItem>
                 </SelectContent>
               </Select>
-               <input type="hidden" name="tipoPetição" value={tipoPetição || ''} />
               {state.errors?.tipoPetição && (
                  <p className="text-sm text-destructive">{state.errors.tipoPetição[0]}</p>
               )}
