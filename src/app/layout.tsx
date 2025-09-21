@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
        <head>
-        <link rel="icon" href="/assets/logo-eustaquio.png" sizes="any" />
+        <link rel="icon" href="/assets/logo-eustaquio-2.png" sizes="any" />
       </head>
       <body
         className={cn(
