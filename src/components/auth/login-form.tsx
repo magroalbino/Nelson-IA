@@ -162,7 +162,7 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center">
-                  <FormLabel>Senha</FormLabel>
+                  <FormLabel>senha</FormLabel>
                   <button
                     type="button"
                     onClick={handlePasswordReset}
