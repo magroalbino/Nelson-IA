@@ -28,14 +28,14 @@ export function AnimatedFeatureText() {
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prevIndex) => (prevIndex + 1) % features.length);
-    }, 5000); // Muda a cada 5 segundos
+    }, 5000); // Change every 5 seconds
 
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="relative h-28">
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={index}
           initial={{ opacity: 0, y: 20 }}
