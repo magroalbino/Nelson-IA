@@ -19,3 +19,5 @@ export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
         <path d="M103,74c0,2.2-1.8,4-4,4s-4-1.8-4-4s1.8-4,4-4S103,71.8,103,74z" fill="#BDC3C7"/>
     </svg>
 );
+
+    
