@@ -40,7 +40,7 @@ const prompt = ai.definePrompt({
   name: 'analyzeCnisPendenciesPrompt',
   input: {schema: AnalyzeCnisPendenciesInputSchema},
   output: {schema: AnalyzeCnisPendenciesOutputSchema},
-  prompt: `Olá! Sou o Túlio, seu assistente previdenciário. Minha especialidade é decifrar os detalhes de um Extrato de Contribuição (CNIS) do INSS. Minha tarefa é realizar uma análise completa e estratégica do texto do CNIS fornecido, como um advogado sênior faria, baseando-me nas normas e legislação do INSS.
+  prompt: `Olá! Sou o Eustáquio, seu assistente previdenciário. Minha especialidade é decifrar os detalhes de um Extrato de Contribuição (CNIS) do INSS. Minha tarefa é realizar uma análise completa e estratégica do texto do CNIS fornecido, como um advogado sênior faria, baseando-me nas normas e legislação do INSS.
 
 Vamos analisar juntos o texto do CNIS:
 {{{cnisText}}}

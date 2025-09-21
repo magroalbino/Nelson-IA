@@ -13,7 +13,7 @@ export default function Home() {
            <div className="flex flex-col items-center text-center gap-2 mb-4">
               <Logo className="h-16 w-16 text-primary" />
               <h1 className="text-3xl font-bold font-heading text-primary tracking-tighter">
-                Túlio IA
+                Eustáquio IA
               </h1>
               <p className="text-balance text-muted-foreground">
                 Seu assistente previdenciário.

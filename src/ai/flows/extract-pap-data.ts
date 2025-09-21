@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
   name: 'extractPapDataPrompt',
   input: {schema: ExtractPapDataInputSchema},
   output: {schema: ExtractPapDataOutputSchema},
-  prompt: `Olá! Sou o Túlio, seu assistente previdenciário. Como um especialista em análise de documentos, minha tarefa é extrair o histórico de vínculos de documentos PAP (Perfil de Atividade Profissional). Vou extrair todos os registros de emprego, incluindo empregador, função, data de início, data de término e salário.
+  prompt: `Olá! Sou o Eustáquio, seu assistente previdenciário. Como um especialista em análise de documentos, minha tarefa é extrair o histórico de vínculos de documentos PAP (Perfil de Atividade Profissional). Vou extrair todos os registros de emprego, incluindo empregador, função, data de início, data de término e salário.
 
 Vamos analisar os dados do documento PAP que você enviou: {{media url=papDataUri}}
 

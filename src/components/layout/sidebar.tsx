@@ -37,7 +37,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center gap-2 p-2">
            <Logo className="h-8 w-8" />
-           <span className="font-semibold text-lg">Túlio IA</span>
+           <span className="font-semibold text-lg">Eustáquio IA</span>
         </div>
       </SidebarHeader>
       <SidebarMenu className="flex-1 p-2">
