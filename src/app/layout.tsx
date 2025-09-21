@@ -26,6 +26,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+       <head>
+        <link rel="icon" href="/assets/logo-eustaquio.png" sizes="any" />
+      </head>
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',

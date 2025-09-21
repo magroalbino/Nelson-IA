@@ -11,7 +11,7 @@ export default function Home() {
       <div className="flex items-center justify-center py-12 bg-background">
         <div className="mx-auto grid w-[380px] gap-8 p-4">
            <div className="flex flex-col items-center text-center gap-2 mb-4">
-              <Logo className="h-16 w-16 text-primary" />
+              <Logo width={64} height={64} className="text-primary" />
               <h1 className="text-3xl font-bold font-heading text-primary tracking-tighter">
                 Eustáquio IA
               </h1>
