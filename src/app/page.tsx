@@ -29,6 +29,10 @@ export default function Home() {
             className="object-cover"
             priority
           />
+           <div className="relative z-10 text-white max-w-2xl text-center">
+              <h2 className="text-4xl font-bold font-heading leading-tight text-shadow">Decisões mais rápidas e inteligentes.</h2>
+              <p className="mt-4 text-lg text-white/90 text-shadow-sm">Eu analiso documentos, identifico oportunidades e gero petições, otimizando seu tempo e aumentando sua eficiência.</p>
+          </div>
       </div>
     </div>
   );
