@@ -36,7 +36,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 p-2">
-           <Logo width={40} height={40} />
+           <Logo className="w-10 h-auto" />
            <span className="font-semibold text-lg">Eustáquio IA</span>
         </div>
       </SidebarHeader>
