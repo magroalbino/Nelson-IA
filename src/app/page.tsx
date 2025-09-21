@@ -30,6 +30,7 @@ export default function Home() {
             data-ai-hint={loginBg.imageHint}
             className="h-full w-full object-cover brightness-50 group-hover:brightness-75 transition-all duration-300"
             fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
             priority
           />
         )}
