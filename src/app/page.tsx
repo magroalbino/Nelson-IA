@@ -21,13 +21,12 @@ export default function Home() {
           <LoginForm />
         </div>
       </div>
-       <div className="hidden lg:flex items-center justify-center bg-muted p-10">
+       <div className="hidden lg:flex items-center justify-center bg-muted p-10 relative">
           <Image
             src="/assets/logo-eustaquio-3.png"
             alt="Eustáquio IA - Logomarca de fundo"
-            width={400}
-            height={400}
-            className="object-contain"
+            fill
+            className="object-cover"
             priority
           />
       </div>
