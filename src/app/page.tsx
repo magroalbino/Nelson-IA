@@ -28,6 +28,7 @@ export default function Home() {
             alt="Eustáquio IA - Logomarca de fundo"
             fill
             className="object-cover"
+            sizes="50vw"
             priority
           />
            <div className="relative z-10 text-white max-w-2xl w-full h-full flex flex-col justify-end">
