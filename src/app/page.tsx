@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { Logo } from '@/components/icons';
 import { LoginForm } from '@/components/auth/login-form';
+import { AnimatedFeatureText } from '@/components/auth/animated-feature-text';
 
 export default function Home() {
   return (
@@ -29,9 +30,10 @@ export default function Home() {
             className="object-cover"
             priority
           />
-           <div className="relative z-10 text-white max-w-2xl text-center">
-              <h2 className="text-4xl font-bold font-heading leading-tight text-shadow">Decisões mais rápidas e inteligentes.</h2>
-              <p className="mt-4 text-lg text-white/90 text-shadow-sm">Eu analiso documentos, identifico oportunidades e gero petições, otimizando seu tempo e aumentando sua eficiência.</p>
+           <div className="relative z-10 text-white max-w-2xl w-full h-full flex flex-col justify-end">
+             <div className="bg-gradient-to-t from-black/60 via-black/30 to-transparent p-8 rounded-b-lg">
+                <AnimatedFeatureText />
+              </div>
           </div>
       </div>
     </div>

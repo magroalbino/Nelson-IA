@@ -13,6 +13,12 @@ export default {
         sans: ['var(--font-sans)', 'sans-serif'],
         heading: ['var(--font-heading)', 'sans-serif'],
       },
+       textShadow: {
+        sm: '0 1px 2px var(--tw-shadow-color)',
+        DEFAULT: '0 2px 4px var(--tw-shadow-color)',
+        md: '0 4px 8px var(--tw-shadow-color)',
+        lg: '0 8px 16px var(--tw-shadow-color)',
+      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
@@ -94,5 +100,17 @@ export default {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    function ({ matchUtilities, theme }: { matchUtilities: any, theme: any }) {
+        matchUtilities(
+            {
+                'text-shadow': (value: any) => ({
+                    textShadow: value,
+                }),
+            },
+            { values: theme('textShadow') }
+        )
+    },
+],
 } satisfies Config;
