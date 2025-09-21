@@ -33,11 +33,13 @@ export default function Home() {
             priority
           />
         )}
-         <div className="absolute bottom-0 left-0 right-0 p-8 text-white bg-gradient-to-t from-black/80 via-black/50 to-transparent">
-            <h2 className="text-2xl font-bold font-heading">Decisões mais rápidas e inteligentes.</h2>
-            <p className="mt-2 text-lg text-white/80 max-w-xl">
-              Eu analiso documentos, identifico oportunidades e gero petições, otimizando seu tempo e aumentando sua eficiência.
-            </p>
+         <div className="absolute bottom-0 left-0 right-0 p-8 text-white bg-gradient-to-t from-black/80 via-black/50 to-transparent flex flex-col justify-end h-full">
+            <div className='pb-10'>
+              <h2 className="text-3xl font-bold font-heading leading-tight">Decisões mais rápidas e inteligentes.</h2>
+              <p className="mt-4 text-lg text-white/80 max-w-xl">
+                Eu analiso documentos, identifico oportunidades e gero petições, otimizando seu tempo e aumentando sua eficiência.
+              </p>
+            </div>
         </div>
       </div>
     </div>
