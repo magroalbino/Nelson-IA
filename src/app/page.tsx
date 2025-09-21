@@ -10,14 +10,16 @@ export default function Home() {
     <div className="relative min-h-screen w-full lg:grid lg:grid-cols-2">
       <div className="flex items-center justify-center py-12 bg-background">
         <div className="mx-auto grid w-[380px] gap-8 p-4">
-           <div className="flex flex-col items-center text-center gap-2 mb-4">
-              <Logo width={80} height={80} className="text-primary" />
-              <h1 className="text-3xl font-bold font-heading text-primary tracking-tighter">
-                Eustáquio IA
-              </h1>
-              <p className="text-balance text-muted-foreground">
-                Seu assistente previdenciário.
-              </p>
+           <div className="flex flex-col items-center text-center gap-4 mb-4">
+              <Logo width={100} height={100} />
+              <div>
+                <h1 className="text-4xl font-bold font-heading text-primary tracking-tighter">
+                  Eustáquio IA
+                </h1>
+                <p className="text-balance text-muted-foreground mt-1">
+                  Seu assistente previdenciário.
+                </p>
+              </div>
           </div>
           <LoginForm />
         </div>
