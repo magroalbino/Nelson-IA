@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowRight, LogIn } from "lucide-react";
+import { ArrowRight, LogIn, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { signInWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -38,6 +38,7 @@ const formSchema = z.object({
 
 export function LoginForm() {
   const router = useRouter();
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
@@ -51,36 +52,64 @@ export function LoginForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      toast({
-        title: "Login bem-sucedido!",
-        description: "Redirecionando para o seu dashboard...",
-      });
-      router.push('/dashboard');
-    } catch (error: any) {
-      console.error("Firebase Auth Error:", error);
-      let errorMessage = "Ocorreu um erro ao fazer login.";
-      switch (error.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-        case 'auth/invalid-credential':
-          errorMessage = 'Email ou senha inválidos.';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'O formato do email é inválido.';
-          break;
-        default:
-          errorMessage = 'Falha na autenticação. Tente novamente mais tarde.';
-          break;
-      }
-      toast({
-        title: "Erro de Login",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    if (isRegisterMode) {
+        // Handle Registration
+        try {
+            await createUserWithEmailAndPassword(auth, values.email, values.password);
+            toast({
+                title: "Conta criada com sucesso!",
+                description: "Redirecionando para o seu dashboard...",
+            });
+            router.push('/dashboard');
+        } catch (error: any) {
+            console.error("Firebase Register Error:", error);
+            let errorMessage = "Ocorreu um erro ao criar a conta.";
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = 'Este endereço de e-mail já está em uso.';
+            } else if (error.code === 'auth/weak-password') {
+                errorMessage = 'A senha é muito fraca. Tente uma mais forte.';
+            }
+            toast({
+                title: "Erro de Registro",
+                description: errorMessage,
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    } else {
+        // Handle Login
+        try {
+          await signInWithEmailAndPassword(auth, values.email, values.password);
+          toast({
+            title: "Login bem-sucedido!",
+            description: "Redirecionando para o seu dashboard...",
+          });
+          router.push('/dashboard');
+        } catch (error: any) {
+          console.error("Firebase Auth Error:", error);
+          let errorMessage = "Ocorreu um erro ao fazer login.";
+          switch (error.code) {
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+            case 'auth/invalid-credential':
+              errorMessage = 'Email ou senha inválidos.';
+              break;
+            case 'auth/invalid-email':
+              errorMessage = 'O formato do email é inválido.';
+              break;
+            default:
+              errorMessage = 'Falha na autenticação. Tente novamente mais tarde.';
+              break;
+          }
+          toast({
+            title: "Erro de Login",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
     }
   }
 
@@ -163,13 +192,15 @@ export function LoginForm() {
               <FormItem>
                 <div className="flex items-center">
                   <FormLabel>Senha</FormLabel>
-                  <button
-                    type="button"
-                    onClick={handlePasswordReset}
-                    className="ml-auto inline-block text-sm text-primary/80 underline-offset-4 hover:text-primary hover:underline focus:outline-none"
-                  >
-                    Esqueceu sua senha?
-                  </button>
+                  {!isRegisterMode && (
+                    <button
+                      type="button"
+                      onClick={handlePasswordReset}
+                      className="ml-auto inline-block text-sm text-primary/80 underline-offset-4 hover:text-primary hover:underline focus:outline-none"
+                    >
+                      Esqueceu sua senha?
+                    </button>
+                  )}
                 </div>
                 <FormControl>
                   <Input type="password" placeholder="Sua senha" {...field} />
@@ -182,17 +213,36 @@ export function LoginForm() {
             {isLoading ? (
               <>
                 <LogIn className="animate-pulse mr-2" />
-                <span>Entrando...</span>
+                <span>{isRegisterMode ? 'Registrando...' : 'Entrando...'}</span>
               </>
             ) : (
-              <>
-                <span>Entrar na Plataforma</span>
-                <ArrowRight className="transition-transform group-hover:translate-x-1" />
-              </>
+                isRegisterMode ? (
+                <>
+                    <UserPlus />
+                    <span>Criar Conta</span>
+                </>
+                ) : (
+                <>
+                    <span>Entrar na Plataforma</span>
+                    <ArrowRight className="transition-transform group-hover:translate-x-1" />
+                </>
+                )
             )}
           </Button>
         </form>
       </Form>
+
+        <div className="text-center text-sm">
+            {isRegisterMode ? "Já tem uma conta? " : "Não tem uma conta? "}
+            <button
+                type="button"
+                onClick={() => setIsRegisterMode(!isRegisterMode)}
+                className="font-semibold text-primary underline-offset-4 hover:underline"
+                disabled={isLoading || isGoogleLoading}
+            >
+                {isRegisterMode ? "Faça login" : "Registre-se aqui"}
+            </button>
+        </div>
 
        <div className="relative">
         <div className="absolute inset-0 flex items-center">
