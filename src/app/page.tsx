@@ -1,11 +1,8 @@
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Logo } from '@/components/icons';
 import { LoginForm } from '@/components/auth/login-form';
 
 export default function Home() {
-  const loginBg = PlaceHolderImages.find(img => img.id === 'login-bg');
-  
   return (
     <div className="relative min-h-screen w-full lg:grid lg:grid-cols-2">
       <div className="flex items-center justify-center py-12 bg-background">
@@ -24,26 +21,15 @@ export default function Home() {
           <LoginForm />
         </div>
       </div>
-       <div className="hidden lg:block relative group">
-        {loginBg && (
+       <div className="hidden lg:flex items-center justify-center bg-muted p-10">
           <Image
-            src={loginBg.imageUrl}
-            alt={loginBg.description}
-            data-ai-hint={loginBg.imageHint}
-            className="h-full w-full object-cover brightness-50 group-hover:brightness-75 transition-all duration-300"
-            fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
+            src="/assets/logo-eustaquio-3.png"
+            alt="Eustáquio IA - Logomarca de fundo"
+            width={400}
+            height={400}
+            className="object-contain"
             priority
           />
-        )}
-         <div className="absolute bottom-0 left-0 right-0 p-8 text-white bg-gradient-to-t from-black/80 via-black/50 to-transparent flex flex-col justify-end h-full">
-            <div className='pb-10'>
-              <h2 className="text-3xl font-bold font-heading leading-tight">Decisões mais rápidas e inteligentes.</h2>
-              <p className="mt-4 text-lg text-white/80 max-w-xl">
-                Eu analiso documentos, identifico oportunidades e gero petições, otimizando seu tempo e aumentando sua eficiência.
-              </p>
-            </div>
-        </div>
       </div>
     </div>
   );
