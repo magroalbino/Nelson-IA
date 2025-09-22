@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, sendPasswordResetEmail, getRedirectResult } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
@@ -41,6 +41,41 @@ export function LoginForm() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+        setIsGoogleLoading(true);
+        try {
+            const result = await getRedirectResult(auth);
+            if (result && result.user) {
+                toast({
+                    title: "Login com Google bem-sucedido!",
+                    description: "Redirecionando para o seu dashboard...",
+                });
+                router.push('/dashboard');
+            }
+        } catch (error: any) {
+            console.error("Google Redirect Auth Error:", error);
+            let title = "Erro de Login com Google";
+            let description = "Não foi possível concluir o login com o Google. Tente novamente.";
+            
+            if (error.code === 'auth/unauthorized-domain') {
+              title = "Domínio não Autorizado";
+              description = "Este domínio não está autorizado para autenticação. O administrador precisa adicionar este domínio no Firebase Console.";
+            }
+
+            toast({
+              title: title,
+              description: description,
+              variant: "destructive",
+            });
+        } finally {
+            setIsGoogleLoading(false);
+        }
+    };
+    handleRedirectResult();
+  }, [router]);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -118,7 +153,7 @@ export function LoginForm() {
     try {
       await signInWithRedirect(auth, googleProvider);
       // The user is redirected to the Google sign-in page.
-      // After sign-in, they are redirected back, and the result is handled by getRedirectResult.
+      // After sign-in, they are redirected back, and the result is handled by the useEffect hook.
     } catch (error: any) {
        console.error("Google Auth Error:", error);
        let title = "Erro de Login com Google";
