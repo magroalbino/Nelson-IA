@@ -15,21 +15,43 @@ const firebaseConfig = {
 
 // Initialize Firebase
 let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-let storage: FirebaseStorage;
-let googleProvider: GoogleAuthProvider;
-
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
 } else {
   app = getApp();
 }
 
-auth = getAuth(app);
-db = getFirestore(app);
-storage = getStorage(app);
-googleProvider = new GoogleAuthProvider();
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
+let googleProvider: GoogleAuthProvider | null = null;
 
+function getAuthInstance() {
+    if (!auth) {
+        auth = getAuth(app);
+    }
+    return auth;
+}
 
-export { app, db, storage, auth, googleProvider };
+function getDbInstance() {
+    if (!db) {
+        db = getFirestore(app);
+    }
+    return db;
+}
+
+function getStorageInstance() {
+    if (!storage) {
+        storage = getStorage(app);
+    }
+    return storage;
+}
+
+function getGoogleProvider() {
+    if(!googleProvider) {
+        googleProvider = new GoogleAuthProvider();
+    }
+    return googleProvider;
+}
+
+export { app, getAuthInstance, getDbInstance, getStorageInstance, getGoogleProvider, googleProvider };

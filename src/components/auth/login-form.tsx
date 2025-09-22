@@ -17,8 +17,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, sendPasswordResetEmail, getRedirectResult } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, sendPasswordResetEmail, getRedirectResult, Auth } from "firebase/auth";
+import { getAuthInstance, googleProvider } from "@/lib/firebase";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -41,6 +41,7 @@ export function LoginForm() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const auth = getAuthInstance();
 
   useEffect(() => {
     const handleRedirectResult = async () => {
@@ -74,7 +75,7 @@ export function LoginForm() {
         }
     };
     handleRedirectResult();
-  }, [router]);
+  }, [auth, router]);
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -165,7 +166,7 @@ export function LoginForm() {
             break;
           case 'auth/unauthorized-domain':
             title = "Domínio não Autorizado";
-            description = "Este domínio não está autorizado para autenticação. O administrador precisa adicionar este domínio no Firebase Console.";
+            description = "O administrador precisa adicionar este domínio no Firebase Console.";
             break;
        }
 
