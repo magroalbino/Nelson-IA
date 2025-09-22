@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -116,21 +116,17 @@ export function LoginForm() {
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-       toast({
-        title: "Login bem-sucedido!",
-        description: "Redirecionando para o seu dashboard...",
-      });
-      router.push('/dashboard');
+      await signInWithRedirect(auth, googleProvider);
+      // O redirecionamento acontecerá aqui. O código abaixo desta linha não será executado nesta chamada.
+      // O resultado será tratado quando a página for recarregada após o redirecionamento do Google.
     } catch (error: any) {
        console.error("Google Auth Error:", error);
        toast({
         title: "Erro de Login com Google",
-        description: error.code === 'auth/popup-closed-by-user' ? "A janela de login foi fechada." : "Não foi possível fazer login com o Google.",
+        description: "Não foi possível iniciar o login com o Google. Verifique a configuração do seu navegador e tente novamente.",
         variant: "destructive",
       });
-    } finally {
-        setIsGoogleLoading(false);
+       setIsGoogleLoading(false);
     }
   }
   
