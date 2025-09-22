@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, sendPasswordResetEmail, getRedirectResult } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -117,13 +117,26 @@ export function LoginForm() {
     setIsGoogleLoading(true);
     try {
       await signInWithRedirect(auth, googleProvider);
-      // O redirecionamento acontecerá aqui. O código abaixo desta linha não será executado nesta chamada.
-      // O resultado será tratado quando a página for recarregada após o redirecionamento do Google.
+      // The user is redirected to the Google sign-in page.
+      // After sign-in, they are redirected back, and the result is handled by getRedirectResult.
     } catch (error: any) {
        console.error("Google Auth Error:", error);
+       let title = "Erro de Login com Google";
+       let description = "Não foi possível iniciar o login com o Google. Tente novamente.";
+       
+       switch (error.code) {
+          case 'auth/popup-blocked':
+            description = "O pop-up de login foi bloqueado pelo navegador. Por favor, habilite os pop-ups para este site e tente novamente.";
+            break;
+          case 'auth/unauthorized-domain':
+            title = "Domínio não Autorizado";
+            description = "Este domínio não está autorizado para autenticação. O administrador precisa adicionar este domínio no Firebase Console.";
+            break;
+       }
+
        toast({
-        title: "Erro de Login com Google",
-        description: "Não foi possível iniciar o login com o Google. Verifique a configuração do seu navegador e tente novamente.",
+        title: title,
+        description: description,
         variant: "destructive",
       });
        setIsGoogleLoading(false);
