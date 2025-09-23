@@ -43,6 +43,7 @@ export function LoginForm() {
 
   useEffect(() => {
     const handleRedirectResult = async () => {
+      setIsLoading(true);
       try {
         const result = await getRedirectResult(auth);
         if (result && result.user) {
@@ -303,3 +304,5 @@ export function LoginForm() {
     </div>
   );
 }
+
+    
