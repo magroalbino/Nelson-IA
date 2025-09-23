@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail, getRedirectResult } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -39,48 +39,37 @@ const formSchema = z.object({
 export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start as true to handle redirect
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // This effect handles the result of the redirect from Google Sign-In.
-  // It should run once when the component mounts to check if the user is returning from authentication.
   useEffect(() => {
-    const checkRedirectResult = async () => {
-      setIsLoading(true); // Show a loading state while checking
+    const handleRedirectResult = async () => {
       try {
         const result = await getRedirectResult(auth);
         if (result && result.user) {
-          // User successfully signed in.
           toast({
-            title: "Login com Google bem-sucedido!",
+            title: "Login bem-sucedido!",
             description: "Redirecionando para o seu dashboard...",
           });
           router.push('/dashboard');
+        } else {
+          // No user, means it's a fresh page load, not a redirect return
+          setIsLoading(false);
         }
       } catch (error: any) {
-        // Handle specific redirect errors here.
         console.error("Google Redirect Auth Error:", error);
-         let title = "Erro de Login com Google";
-         let description = "Não foi possível completar o login com o Google. Tente novamente.";
-         
-         if (error.code === 'auth/unauthorized-domain') {
-            title = "Domínio não Autorizado";
-            description = "O administrador precisa adicionar este domínio no Firebase Console.";
-         }
-
-         toast({
-          title: title,
-          description: description,
+        toast({
+          title: "Erro de Autenticação",
+          description: "Não foi possível completar o login com o Google. Verifique se o domínio está autorizado no Firebase Console.",
           variant: "destructive",
         });
-      } finally {
-        setIsLoading(false); // Hide loading state
+        setIsLoading(false);
       }
     };
 
-    checkRedirectResult();
+    handleRedirectResult();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once on mount.
+  }, []);
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -156,29 +145,18 @@ export function LoginForm() {
 
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
+    setIsLoading(true); // Show loading for the whole form
     try {
-      await signInWithPopup(auth, googleProvider);
-      toast({
-        title: "Login com Google bem-sucedido!",
-        description: "Redirecionando para o seu dashboard...",
-      });
-      router.push('/dashboard');
+      // Use redirect method, the result is handled by the useEffect hook
+      await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
-       console.error("Google Auth Error:", error);
+       console.error("Google Auth Redirect Error:", error);
        let title = "Erro de Login com Google";
        let description = "Não foi possível iniciar o login com o Google. Tente novamente.";
        
-       switch (error.code) {
-          case 'auth/popup-blocked':
-            description = "O pop-up de login foi bloqueado pelo navegador. Por favor, habilite os pop-ups para este site e tente novamente.";
-            break;
-          case 'auth/popup-closed-by-user':
-            description = "A janela de login foi fechada antes da conclusão. Tente novamente.";
-            break;
-          case 'auth/unauthorized-domain':
+       if (error.code === 'auth/unauthorized-domain') {
             title = "Domínio não Autorizado";
             description = "O administrador precisa adicionar este domínio no Firebase Console.";
-            break;
        }
 
        toast({
@@ -186,8 +164,8 @@ export function LoginForm() {
         description: description,
         variant: "destructive",
       });
-    } finally {
        setIsGoogleLoading(false);
+       setIsLoading(false);
     }
   }
   
@@ -223,6 +201,17 @@ export function LoginForm() {
         variant: "destructive",
       });
     }
+  }
+
+  if (isLoading) {
+    // Show a loading state for the whole form while checking for redirect result
+    return (
+        <div className="grid gap-6">
+            <div className="flex justify-center items-center h-64">
+                <LogIn className="animate-spin h-8 w-8 text-primary" />
+            </div>
+        </div>
+    );
   }
 
   return (
@@ -267,7 +256,7 @@ export function LoginForm() {
             )}
           />
           <Button type="submit" className="w-full group" size="lg" disabled={isLoading || isGoogleLoading}>
-            {isLoading ? (
+            {isLoading && !isGoogleLoading ? (
               <>
                 <LogIn className="animate-pulse mr-2" />
                 <span>{isRegisterMode ? 'Registrando...' : 'Entrando...'}</span>
@@ -314,7 +303,7 @@ export function LoginForm() {
       
       <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
         {isGoogleLoading ? (
-            <LogIn className="animate-pulse mr-2" />
+            <LogIn className="animate-spin mr-2" />
         ) : (
             <GoogleIcon className="mr-2 h-4 w-4"/>
         )}
