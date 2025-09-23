@@ -16,8 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn, UserPlus } from "lucide-react";
-import { useState } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
+import { useState, useEffect } from "react";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendPasswordResetEmail, getRedirectResult } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -41,6 +41,47 @@ export function LoginForm() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // This effect handles the result of the redirect from Google Sign-In.
+  // It should run once when the component mounts to check if the user is returning from authentication.
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      setIsLoading(true); // Show a loading state while checking
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          // User successfully signed in.
+          toast({
+            title: "Login com Google bem-sucedido!",
+            description: "Redirecionando para o seu dashboard...",
+          });
+          router.push('/dashboard');
+        }
+      } catch (error: any) {
+        // Handle specific redirect errors here.
+        console.error("Google Redirect Auth Error:", error);
+         let title = "Erro de Login com Google";
+         let description = "Não foi possível completar o login com o Google. Tente novamente.";
+         
+         if (error.code === 'auth/unauthorized-domain') {
+            title = "Domínio não Autorizado";
+            description = "O administrador precisa adicionar este domínio no Firebase Console.";
+         }
+
+         toast({
+          title: title,
+          description: description,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false); // Hide loading state
+      }
+    };
+
+    checkRedirectResult();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once on mount.
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -114,6 +155,7 @@ export function LoginForm() {
   }
 
   async function handleGoogleSignIn() {
+    console.log("Current Origin for Firebase Auth:", window.location.origin);
     setIsGoogleLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
@@ -136,7 +178,7 @@ export function LoginForm() {
             break;
           case 'auth/unauthorized-domain':
             title = "Domínio não Autorizado";
-            description = "Este domínio não está autorizado para fazer login. Contate o administrador.";
+            description = "O administrador precisa adicionar este domínio no Firebase Console.";
             break;
        }
 
