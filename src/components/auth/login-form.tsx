@@ -40,37 +40,39 @@ export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(true); // Start as true to handle initial redirect check
-  
+  const [isGoogleLoading, setIsGoogleLoading] = useState(true);
+
+  // This useEffect handles the result of the redirect from Google Sign-In.
+  // It should be the first thing to run.
   useEffect(() => {
     const handleRedirectResult = async () => {
-        try {
-            const result = await getRedirectResult(auth);
-            if (result && result.user) {
-                toast({
-                    title: "Login com Google bem-sucedido!",
-                    description: "Redirecionando para o seu dashboard...",
-                });
-                router.push('/dashboard');
-            }
-        } catch (error: any) {
-            console.error("Google Redirect Auth Error:", error);
-            let title = "Erro de Login com Google";
-            let description = "Não foi possível concluir o login com o Google. Tente novamente.";
-            
-            if (error.code === 'auth/unauthorized-domain') {
-              title = "Domínio não Autorizado";
-              description = "O administrador precisa adicionar este domínio no Firebase Console.";
-            }
-
-            toast({
-              title: title,
-              description: description,
-              variant: "destructive",
-            });
-        } finally {
-            setIsGoogleLoading(false);
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          toast({
+            title: "Login com Google bem-sucedido!",
+            description: "Redirecionando para o seu dashboard...",
+          });
+          router.push('/dashboard');
         }
+      } catch (error: any) {
+        console.error("Google Auth Error:", error);
+        let title = "Erro de Login com Google";
+        let description = "Não foi possível concluir o login com o Google. Tente novamente.";
+
+        if (error.code === 'auth/unauthorized-domain') {
+          title = "Domínio não Autorizado";
+          description = "O administrador precisa adicionar este domínio no Firebase Console.";
+        }
+        
+        toast({
+          title: title,
+          description: description,
+          variant: "destructive",
+        });
+      } finally {
+        setIsGoogleLoading(false); // Stop loading once the check is complete.
+      }
     };
     handleRedirectResult();
   }, [router]);
