@@ -41,10 +41,9 @@ export function LoginForm() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // This effect handles the result from a redirect-based sign-in
-  // It's kept for robustness in case the sign-in method changes back.
   useEffect(() => {
     const checkRedirectResult = async () => {
+      setIsLoading(true);
       try {
         const result = await getRedirectResult(auth);
         if (result && result.user) {
@@ -57,7 +56,14 @@ export function LoginForm() {
       } catch (error: any) {
          if (error.code !== 'auth/no-redirect-operation') {
             console.error("Redirect result error:", error);
+            toast({
+              title: "Erro de Login",
+              description: "Não foi possível completar o login via redirecionamento.",
+              variant: "destructive"
+            });
          }
+      } finally {
+        setIsLoading(false);
       }
     };
     checkRedirectResult();
@@ -133,7 +139,7 @@ export function LoginForm() {
 
        if (error.code === 'auth/unauthorized-domain') {
             title = "Domínio não Autorizado";
-            description = "Este domínio não está autorizado para autenticação. Verifique os 'Domínios Autorizados' no seu Firebase Console.";
+            description = "Este domínio não está na lista de permissões do Firebase. Verifique os 'Domínios Autorizados' no seu Firebase Console e adicione o domínio correto.";
        } else if (error.code === 'auth/popup-blocked') {
            title = "Pop-up Bloqueado";
            description = "O seu navegador bloqueou a janela de login. Por favor, permita pop-ups para este site e tente novamente.";
