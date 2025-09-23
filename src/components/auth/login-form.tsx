@@ -43,7 +43,6 @@ export function LoginForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(true);
 
   // This useEffect handles the result of the redirect from Google Sign-In.
-  // It should be the first thing to run.
   useEffect(() => {
     const handleRedirectResult = async () => {
       try {
