@@ -41,10 +41,9 @@ export function LoginForm() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Still check for redirect results, just in case, but primary method is popup
   useEffect(() => {
     const checkRedirect = async () => {
-        setIsLoading(true);
+        // This effect will only run on the client side, after hydration
         try {
             const result = await getRedirectResult(auth);
             if (result && result.user) {
@@ -54,11 +53,10 @@ export function LoginForm() {
                 });
                 router.push('/dashboard');
             }
-        } catch (error) {
-            // Silently fail, as popup is the main method
-            console.error("Redirect check failed:", error);
-        } finally {
-            setIsLoading(false);
+        } catch (error: any) {
+            if (error.code !== 'auth/no-redirect-operation') {
+              console.error("Redirect check failed:", error);
+            }
         }
     };
     checkRedirect();
@@ -76,44 +74,27 @@ export function LoginForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    if (isRegisterMode) {
-        // Handle Registration
-        try {
-            await createUserWithEmailAndPassword(auth, values.email, values.password);
-            toast({
-                title: "Conta criada com sucesso!",
-                description: "Redirecionando para o seu dashboard...",
-            });
-            router.push('/dashboard');
-        } catch (error: any) {
-            console.error("Firebase Register Error:", error);
-            let errorMessage = "Ocorreu um erro ao criar a conta.";
-            if (error.code === 'auth/email-already-in-use') {
-                errorMessage = 'Este endereço de e-mail já está em uso.';
-            } else if (error.code === 'auth/weak-password') {
-                errorMessage = 'A senha é muito fraca. Tente uma mais forte.';
-            }
-            toast({
-                title: "Erro de Registro",
-                description: errorMessage,
-                variant: "destructive",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    } else {
-        // Handle Login
-        try {
-          await signInWithEmailAndPassword(auth, values.email, values.password);
-          toast({
-            title: "Login bem-sucedido!",
+    const action = isRegisterMode ? createUserWithEmailAndPassword : signInWithEmailAndPassword;
+    const successTitle = isRegisterMode ? "Conta criada com sucesso!" : "Login bem-sucedido!";
+    const errorTitle = isRegisterMode ? "Erro de Registro" : "Erro de Login";
+    
+    try {
+        await action(auth, values.email, values.password);
+        toast({
+            title: successTitle,
             description: "Redirecionando para o seu dashboard...",
-          });
-          router.push('/dashboard');
-        } catch (error: any) {
-          console.error("Firebase Auth Error:", error);
-          let errorMessage = "Ocorreu um erro ao fazer login.";
-          switch (error.code) {
+        });
+        router.push('/dashboard');
+    } catch (error: any) {
+        console.error(`Firebase ${isRegisterMode ? 'Register' : 'Login'} Error:`, error);
+        let errorMessage = "Ocorreu um erro. Tente novamente.";
+        switch (error.code) {
+            case 'auth/email-already-in-use':
+                errorMessage = 'Este endereço de e-mail já está em uso.';
+                break;
+            case 'auth/weak-password':
+                errorMessage = 'A senha é muito fraca. Tente uma mais forte.';
+                break;
             case 'auth/user-not-found':
             case 'auth/wrong-password':
             case 'auth/invalid-credential':
@@ -122,18 +103,14 @@ export function LoginForm() {
             case 'auth/invalid-email':
               errorMessage = 'O formato do email é inválido.';
               break;
-            default:
-              errorMessage = 'Falha na autenticação. Tente novamente mais tarde.';
-              break;
-          }
-          toast({
-            title: "Erro de Login",
+        }
+        toast({
+            title: errorTitle,
             description: errorMessage,
             variant: "destructive",
-          });
-        } finally {
-          setIsLoading(false);
-        }
+        });
+    } finally {
+        setIsLoading(false);
     }
   }
 
@@ -155,7 +132,7 @@ export function LoginForm() {
 
        if (error.code === 'auth/unauthorized-domain') {
             title = "Domínio não Autorizado";
-            description = "Este domínio não está autorizado para autenticação. Por favor, adicione-o no seu Firebase Console em Authentication -> Settings -> Authorized domains.";
+            description = "Este domínio não está autorizado para autenticação. Por favor, verifique a lista de 'Domínios Autorizados' no seu Firebase Console.";
        } else if (error.code === 'auth/popup-blocked') {
            title = "Pop-up Bloqueado";
            description = "O seu navegador bloqueou a janela de login. Por favor, permita pop-ups para este site e tente novamente.";
@@ -187,7 +164,8 @@ export function LoginForm() {
       });
       return;
     }
-
+    
+    setIsLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
       toast({
@@ -205,17 +183,9 @@ export function LoginForm() {
         description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-  }
-
-  if (isLoading) {
-    return (
-        <div className="grid gap-6">
-            <div className="flex justify-center items-center h-64">
-                <LogIn className="animate-spin h-8 w-8 text-primary" />
-            </div>
-        </div>
-    );
   }
 
   return (
@@ -229,7 +199,7 @@ export function LoginForm() {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="Seu@email.com" {...field} />
+                  <Input placeholder="Seu@email.com" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -246,14 +216,15 @@ export function LoginForm() {
                     <button
                       type="button"
                       onClick={handlePasswordReset}
-                      className="ml-auto inline-block text-sm text-primary/80 underline-offset-4 hover:text-primary hover:underline focus:outline-none"
+                      className="ml-auto inline-block text-sm text-primary/80 underline-offset-4 hover:text-primary hover:underline focus:outline-none disabled:opacity-50"
+                      disabled={isLoading}
                     >
                       Esqueceu sua senha?
                     </button>
                   )}
                 </div>
                 <FormControl>
-                  <Input type="password" placeholder="Sua senha" {...field} />
+                  <Input type="password" placeholder="Sua senha" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -262,7 +233,7 @@ export function LoginForm() {
           <Button type="submit" className="w-full group" size="lg" disabled={isLoading}>
             {isLoading ? (
               <>
-                <LogIn className="animate-pulse mr-2" />
+                <LogIn className="animate-spin mr-2" />
                 <span>{isRegisterMode ? 'Registrando...' : 'Entrando...'}</span>
               </>
             ) : (
@@ -287,7 +258,7 @@ export function LoginForm() {
             <button
                 type="button"
                 onClick={() => setIsRegisterMode(!isRegisterMode)}
-                className="font-semibold text-primary underline-offset-4 hover:underline"
+                className="font-semibold text-primary underline-offset-4 hover:underline disabled:opacity-50"
                 disabled={isLoading}
             >
                 {isRegisterMode ? "Faça login" : "Registre-se aqui"}
@@ -306,7 +277,11 @@ export function LoginForm() {
       </div>
       
       <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-        <GoogleIcon className="mr-2 h-4 w-4"/>
+        {isLoading ? (
+            <LogIn className="animate-spin mr-2 h-4 w-4" />
+        ) : (
+            <GoogleIcon className="mr-2 h-4 w-4"/>
+        )}
         Entrar com Google
       </Button>
     </div>
