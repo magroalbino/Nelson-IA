@@ -41,25 +41,26 @@ export function LoginForm() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // This effect handles the result from a redirect-based sign-in
+  // It's kept for robustness in case the sign-in method changes back.
   useEffect(() => {
-    const checkRedirect = async () => {
-        // This effect will only run on the client side, after hydration
-        try {
-            const result = await getRedirectResult(auth);
-            if (result && result.user) {
-                toast({
-                    title: "Login bem-sucedido!",
-                    description: "Redirecionando para o seu dashboard...",
-                });
-                router.push('/dashboard');
-            }
-        } catch (error: any) {
-            if (error.code !== 'auth/no-redirect-operation') {
-              console.error("Redirect check failed:", error);
-            }
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          toast({
+            title: "Login bem-sucedido!",
+            description: "Redirecionando para o seu dashboard...",
+          });
+          router.push('/dashboard');
         }
+      } catch (error: any) {
+         if (error.code !== 'auth/no-redirect-operation') {
+            console.error("Redirect result error:", error);
+         }
+      }
     };
-    checkRedirect();
+    checkRedirectResult();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -132,7 +133,7 @@ export function LoginForm() {
 
        if (error.code === 'auth/unauthorized-domain') {
             title = "Domínio não Autorizado";
-            description = "Este domínio não está autorizado para autenticação. Por favor, verifique a lista de 'Domínios Autorizados' no seu Firebase Console.";
+            description = "Este domínio não está autorizado para autenticação. Verifique os 'Domínios Autorizados' no seu Firebase Console.";
        } else if (error.code === 'auth/popup-blocked') {
            title = "Pop-up Bloqueado";
            description = "O seu navegador bloqueou a janela de login. Por favor, permita pop-ups para este site e tente novamente.";
@@ -231,23 +232,20 @@ export function LoginForm() {
             )}
           />
           <Button type="submit" className="w-full group" size="lg" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <LogIn className="animate-spin mr-2" />
-                <span>{isRegisterMode ? 'Registrando...' : 'Entrando...'}</span>
-              </>
-            ) : (
-                isRegisterMode ? (
+            {isLoading && isRegisterMode ? (
+                <span>Registrando...</span>
+            ) : isLoading ? (
+                <span>Entrando...</span>
+            ) : isRegisterMode ? (
                 <>
                     <UserPlus />
                     <span>Criar Conta</span>
                 </>
-                ) : (
+            ) : (
                 <>
                     <span>Entrar na Plataforma</span>
                     <ArrowRight className="transition-transform group-hover:translate-x-1" />
                 </>
-                )
             )}
           </Button>
         </form>
