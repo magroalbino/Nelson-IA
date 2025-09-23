@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, getRedirectResult, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -39,33 +39,29 @@ const formSchema = z.object({
 export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Still check for redirect results, just in case, but primary method is popup
   useEffect(() => {
-    const handleRedirectResult = async () => {
-      setIsLoading(true);
-      try {
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          toast({
-            title: "Login bem-sucedido!",
-            description: "Redirecionando para o seu dashboard...",
-          });
-          router.push('/dashboard');
+    const checkRedirect = async () => {
+        setIsLoading(true);
+        try {
+            const result = await getRedirectResult(auth);
+            if (result && result.user) {
+                toast({
+                    title: "Login bem-sucedido!",
+                    description: "Redirecionando para o seu dashboard...",
+                });
+                router.push('/dashboard');
+            }
+        } catch (error) {
+            // Silently fail, as popup is the main method
+            console.error("Redirect check failed:", error);
+        } finally {
+            setIsLoading(false);
         }
-      } catch (error: any) {
-        console.error("Google Redirect Auth Error:", error);
-        toast({
-          title: "Erro de Autenticação",
-          description: "Não foi possível completar o login com o Google. Verifique se o domínio está autorizado no Firebase Console.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
     };
-
-    handleRedirectResult();
+    checkRedirect();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -144,16 +140,28 @@ export function LoginForm() {
   async function handleGoogleSignIn() {
     setIsLoading(true);
     try {
-      // Use redirect method, the result is handled by the useEffect hook
-      await signInWithRedirect(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result.user) {
+        toast({
+          title: "Login com Google bem-sucedido!",
+          description: "Redirecionando para o seu dashboard...",
+        });
+        router.push('/dashboard');
+      }
     } catch (error: any) {
-       console.error("Google Auth Redirect Error:", error);
+       console.error("Google Popup Auth Error:", error);
        let title = "Erro de Login com Google";
-       let description = "Não foi possível iniciar o login com o Google. Tente novamente.";
-       
+       let description = "Não foi possível completar o login com o Google.";
+
        if (error.code === 'auth/unauthorized-domain') {
             title = "Domínio não Autorizado";
-            description = "O administrador precisa adicionar este domínio no Firebase Console.";
+            description = "Este domínio não está autorizado para autenticação. Por favor, adicione-o no seu Firebase Console em Authentication -> Settings -> Authorized domains.";
+       } else if (error.code === 'auth/popup-blocked') {
+           title = "Pop-up Bloqueado";
+           description = "O seu navegador bloqueou a janela de login. Por favor, permita pop-ups para este site e tente novamente.";
+       } else if (error.code === 'auth/popup-closed-by-user') {
+           title = "Login Cancelado";
+           description = "A janela de login foi fechada antes da conclusão.";
        }
 
        toast({
@@ -161,6 +169,7 @@ export function LoginForm() {
         description: description,
         variant: "destructive",
       });
+    } finally {
        setIsLoading(false);
     }
   }
@@ -200,7 +209,6 @@ export function LoginForm() {
   }
 
   if (isLoading) {
-    // Show a loading state for the whole form while checking for redirect result
     return (
         <div className="grid gap-6">
             <div className="flex justify-center items-center h-64">
@@ -304,5 +312,3 @@ export function LoginForm() {
     </div>
   );
 }
-
-    
