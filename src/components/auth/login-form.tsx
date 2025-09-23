@@ -39,8 +39,7 @@ const formSchema = z.object({
 export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Start as true to handle redirect
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const handleRedirectResult = async () => {
@@ -52,9 +51,6 @@ export function LoginForm() {
             description: "Redirecionando para o seu dashboard...",
           });
           router.push('/dashboard');
-        } else {
-          // No user, means it's a fresh page load, not a redirect return
-          setIsLoading(false);
         }
       } catch (error: any) {
         console.error("Google Redirect Auth Error:", error);
@@ -63,6 +59,7 @@ export function LoginForm() {
           description: "Não foi possível completar o login com o Google. Verifique se o domínio está autorizado no Firebase Console.",
           variant: "destructive",
         });
+      } finally {
         setIsLoading(false);
       }
     };
@@ -144,8 +141,7 @@ export function LoginForm() {
   }
 
   async function handleGoogleSignIn() {
-    setIsGoogleLoading(true);
-    setIsLoading(true); // Show loading for the whole form
+    setIsLoading(true);
     try {
       // Use redirect method, the result is handled by the useEffect hook
       await signInWithRedirect(auth, googleProvider);
@@ -164,7 +160,6 @@ export function LoginForm() {
         description: description,
         variant: "destructive",
       });
-       setIsGoogleLoading(false);
        setIsLoading(false);
     }
   }
@@ -255,8 +250,8 @@ export function LoginForm() {
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full group" size="lg" disabled={isLoading || isGoogleLoading}>
-            {isLoading && !isGoogleLoading ? (
+          <Button type="submit" className="w-full group" size="lg" disabled={isLoading}>
+            {isLoading ? (
               <>
                 <LogIn className="animate-pulse mr-2" />
                 <span>{isRegisterMode ? 'Registrando...' : 'Entrando...'}</span>
@@ -284,7 +279,7 @@ export function LoginForm() {
                 type="button"
                 onClick={() => setIsRegisterMode(!isRegisterMode)}
                 className="font-semibold text-primary underline-offset-4 hover:underline"
-                disabled={isLoading || isGoogleLoading}
+                disabled={isLoading}
             >
                 {isRegisterMode ? "Faça login" : "Registre-se aqui"}
             </button>
@@ -301,12 +296,8 @@ export function LoginForm() {
         </div>
       </div>
       
-      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
-        {isGoogleLoading ? (
-            <LogIn className="animate-spin mr-2" />
-        ) : (
-            <GoogleIcon className="mr-2 h-4 w-4"/>
-        )}
+      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+        <GoogleIcon className="mr-2 h-4 w-4"/>
         Entrar com Google
       </Button>
     </div>
