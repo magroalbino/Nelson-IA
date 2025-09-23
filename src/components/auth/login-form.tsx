@@ -155,7 +155,6 @@ export function LoginForm() {
   }
 
   async function handleGoogleSignIn() {
-    console.log("Current Origin for Firebase Auth:", window.location.origin);
     setIsGoogleLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
