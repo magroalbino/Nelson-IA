@@ -43,7 +43,7 @@ export function LoginForm() {
 
   useEffect(() => {
     // This effect handles the result from a sign-in redirect attempt.
-    // While we primarily use signInWithPopup, this is good practice to have.
+    // While we primarily use signInWithPopup, this is good practice to have for other potential auth flows.
     getRedirectResult(auth)
       .then((result) => {
         if (result && result.user) {
@@ -289,3 +289,5 @@ export function LoginForm() {
     </div>
   );
 }
+
+    
