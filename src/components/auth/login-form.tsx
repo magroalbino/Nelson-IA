@@ -42,10 +42,10 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const checkRedirectResult = async () => {
-      setIsLoading(true);
-      try {
-        const result = await getRedirectResult(auth);
+    // This effect handles the result from a sign-in redirect attempt.
+    // While we primarily use signInWithPopup, this is good practice to have.
+    getRedirectResult(auth)
+      .then((result) => {
         if (result && result.user) {
           toast({
             title: "Login bem-sucedido!",
@@ -53,20 +53,18 @@ export function LoginForm() {
           });
           router.push('/dashboard');
         }
-      } catch (error: any) {
-         if (error.code !== 'auth/no-redirect-operation') {
-            console.error("Redirect result error:", error);
-            toast({
-              title: "Erro de Login",
-              description: "Não foi possível completar o login via redirecionamento.",
-              variant: "destructive"
-            });
-         }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkRedirectResult();
+      })
+      .catch((error) => {
+        // We only log errors here if it's not a 'no redirect' operation.
+        if (error.code !== 'auth/no-redirect-operation') {
+          console.error("Redirect result error:", error);
+          toast({
+            title: "Erro de Login",
+            description: "Não foi possível completar o login via redirecionamento.",
+            variant: "destructive"
+          });
+        }
+      });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
