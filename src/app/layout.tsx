@@ -7,6 +7,9 @@ import { cn } from '@/lib/utils';
 export const metadata: Metadata = {
   title: 'Nelson IA – Seu Assistente Previdenciário',
   description: 'Análise de documentos, geração de petições e planejamento previdenciário com IA.',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 const fontSans = Inter({
@@ -26,9 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-       <head>
-        <link rel="icon" href="/assets/favicon.ico" sizes="any" />
-      </head>
+       <head />
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',
