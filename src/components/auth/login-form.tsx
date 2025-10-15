@@ -42,8 +42,6 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // This effect handles the result from a sign-in redirect attempt.
-    // While we primarily use signInWithPopup, this is good practice to have for other potential auth flows.
     getRedirectResult(auth)
       .then((result) => {
         if (result && result.user) {
@@ -55,7 +53,6 @@ export function LoginForm() {
         }
       })
       .catch((error) => {
-        // We only log errors here if it's not a 'no redirect' operation.
         if (error.code !== 'auth/no-redirect-operation') {
           console.error("Redirect result error:", error);
           toast({
@@ -137,7 +134,7 @@ export function LoginForm() {
 
        if (error.code === 'auth/unauthorized-domain') {
             title = "Domínio não Autorizado";
-            description = "Este domínio não está na lista de permissões do Firebase. Verifique os 'Domínios Autorizados' no seu Firebase Console e adicione o domínio correto.";
+            description = "O domínio da Vercel não está autorizado. Vá ao seu Firebase Console > Authentication > Settings > Authorized domains e adicione o domínio da sua aplicação.";
        } else if (error.code === 'auth/popup-blocked') {
            title = "Pop-up Bloqueado";
            description = "O seu navegador bloqueou a janela de login. Por favor, permita pop-ups para este site e tente novamente.";
@@ -289,5 +286,3 @@ export function LoginForm() {
     </div>
   );
 }
-
-    
