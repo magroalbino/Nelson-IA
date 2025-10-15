@@ -1,4 +1,4 @@
-# Eustáquio-IA
+# Nelson-IA
 
 > Ferramenta de inteligência artificial para análise previdenciária, voltada para advogados, escritórios e profissionais do direito previdenciário.
 
@@ -6,7 +6,7 @@
 
 ## 🔍 Visão Geral
 
-O **Eustáquio-IA** é um sistema próprio para automatizar etapas críticas no tratamento de casos previdenciários:
+O **Nelson-IA** é um sistema próprio para automatizar etapas críticas no tratamento de casos previdenciários:
 
 - Análise de **CNIS, PPP, PAP** e documentos correlatos;  
 - Identificação de vínculos de trabalho, períodos contributivos, lacunas e irregularidades;  
@@ -38,8 +38,8 @@ O repositório está organizado conforme:
 1. Clone o repositório:
 
    ```bash
-   git clone https://github.com/magroalbino/Eustaquio-IA.git
-   cd Eustaquio-IA
+   git clone https://github.com/magroalbino/Nelson-IA.git
+   cd Nelson-IA
    ```
 
 2. Instale dependências:

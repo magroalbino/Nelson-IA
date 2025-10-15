@@ -12,7 +12,7 @@ export default function Home() {
               <Logo className="w-24 h-auto" />
               <div>
                 <h1 className="text-4xl font-bold font-heading text-primary tracking-tighter">
-                  Eustáquio IA
+                  Nelson IA
                 </h1>
                 <p className="text-balance text-muted-foreground mt-1">
                   Seu assistente previdenciário.
@@ -25,7 +25,7 @@ export default function Home() {
        <div className="hidden lg:flex items-center justify-center bg-muted p-10 relative">
           <Image
             src="/assets/logo-eustaquio-3.png"
-            alt="Eustáquio IA - Logomarca de fundo"
+            alt="Nelson IA - Logomarca de fundo"
             fill
             className="object-cover"
             sizes="50vw"

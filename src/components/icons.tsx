@@ -4,7 +4,7 @@ import type { ImageProps } from "next/image";
 export const Logo = (props: Omit<ImageProps, 'src' | 'alt'>) => (
     <Image
         src="/assets/logo-eustaquio-2.png"
-        alt="Eustáquio IA Logo"
+        alt="Nelson IA Logo"
         width={512}
         height={512}
         {...props}
