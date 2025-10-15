@@ -24,7 +24,7 @@ export default function Home() {
       </div>
        <div className="hidden lg:flex items-center justify-center bg-muted p-10 relative">
           <Image
-            src="/assets/logo-eustaquio-3.png"
+            src="/assets/logo-nelson-3.png"
             alt="Nelson IA - Logomarca de fundo"
             fill
             className="object-cover"
