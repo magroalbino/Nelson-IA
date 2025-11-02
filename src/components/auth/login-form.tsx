@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithPopup, User as FirebaseUser } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
 
@@ -46,19 +46,16 @@ export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(true);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false); // Changed initial state
+  const [user, setUser] = useState<FirebaseUser | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setIsLoading(true);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
         router.push('/dashboard');
-        return;
       }
-      // If no user, we are not in a redirect flow, so we can stop loading.
-      setIsGoogleLoading(false);
     });
-
     return () => unsubscribe();
   }, [router]);
 
@@ -78,14 +75,12 @@ export function LoginForm() {
     const errorTitle = isRegisterMode ? "Erro de Registro" : "Erro de Login";
     
     try {
-        const userCredential = await action(auth, values.email, values.password);
-        if (userCredential.user) {
-          toast({
-              title: successTitle,
-              description: "Redirecionando para o seu dashboard...",
-          });
-          // onAuthStateChanged will handle the redirect
-        }
+        await action(auth, values.email, values.password);
+        toast({
+            title: successTitle,
+            description: "Redirecionando para o seu dashboard...",
+        });
+        // onAuthStateChanged will handle the redirect
     } catch (error: any) {
         console.error(`Firebase ${isRegisterMode ? 'Register' : 'Login'} Error:`, error);
         let errorMessage = "Ocorreu um erro. Tente novamente.";
@@ -185,7 +180,7 @@ export function LoginForm() {
     }
   }
 
-  const anyLoading = isLoading || isGoogleLoading;
+  const anyLoading = isLoading || isGoogleLoading || user;
 
   return (
     <div className="grid gap-6">
@@ -234,6 +229,8 @@ export function LoginForm() {
                 <span>Registrando...</span>
             ) : isLoading ? (
                 <span>Entrando...</span>
+             ) : user ? (
+                <span>Redirecionando...</span>
             ) : isRegisterMode ? (
                 <>
                     <UserPlus />
@@ -273,7 +270,7 @@ export function LoginForm() {
       </div>
       
       <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={anyLoading}>
-        {isGoogleLoading ? (
+        {isGoogleLoading || user ? (
             <Loader2 className="animate-spin mr-2 h-4 w-4" />
         ) : (
             <GoogleIcon className="mr-2 h-4 w-4"/>
@@ -283,5 +280,3 @@ export function LoginForm() {
     </div>
   );
 }
-
-    
