@@ -46,41 +46,40 @@ export function LoginForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(true);
 
   useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        setIsGoogleLoading(false);
+    const processRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
         if (result && result.user) {
           toast({
             title: "Login bem-sucedido!",
             description: "Redirecionando para o seu dashboard...",
           });
           router.push('/dashboard');
+        } else {
+          setIsGoogleLoading(false);
         }
-      })
-      .catch((error) => {
+      } catch (error: any) {
         setIsGoogleLoading(false);
-         // This can happen if the page loads without a redirect operation.
         if (error.code === 'auth/no-redirect-operation') {
           return;
         }
-
         console.error("Redirect result error:", error);
         let title = "Erro de Autenticação";
         let description = "Não foi possível completar o login via redirecionamento.";
-        
         if (error.code === 'auth/unauthorized-domain') {
             title = "Domínio não Autorizado";
-            description = "O domínio do aplicativo não está autorizado. Vá ao seu Firebase Console > Authentication > Settings > Authorized domains e adicione o domínio da sua aplicação Vercel.";
+            description = "O domínio do aplicativo não está autorizado. Vá ao seu Firebase Console > Authentication > Settings > Authorized domains e adicione o domínio da sua aplicação.";
         }
-        
         toast({
             title: title,
             description: description,
             variant: "destructive"
         });
-      });
+      }
+    };
+    processRedirectResult();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [router]);
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -136,7 +135,6 @@ export function LoginForm() {
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
     try {
-      // Use redirect method, the result is handled by the useEffect hook
       await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
        console.error("Google Auth Redirect Error:", error);
@@ -291,5 +289,3 @@ export function LoginForm() {
     </div>
   );
 }
-
-    
