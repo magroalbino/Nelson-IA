@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -25,7 +26,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
         <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
         <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
         <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.565-3.113-11.28-7.561l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
-g        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C39.902,35.688,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
+        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C39.902,35.688,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
     </svg>
 );
 
@@ -43,42 +44,44 @@ export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(true);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   useEffect(() => {
-    const processRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.push('/dashboard');
+      }
+    });
+
+    getRedirectResult(auth)
+      .then((result) => {
         if (result && result.user) {
-          toast({
+           toast({
             title: "Login bem-sucedido!",
-            description: "Redirecionando para o seu dashboard...",
+            description: "Bem-vindo(a) de volta.",
           });
           router.push('/dashboard');
-        } else {
-          setIsGoogleLoading(false);
         }
-      } catch (error: any) {
-        setIsGoogleLoading(false);
-        if (error.code === 'auth/no-redirect-operation') {
-          return;
-        }
-        console.error("Redirect result error:", error);
-        let title = "Erro de Autenticação";
-        let description = "Não foi possível completar o login via redirecionamento.";
-        if (error.code === 'auth/unauthorized-domain') {
+      })
+      .catch((error) => {
+        console.error("Google Redirect Result Error:", error);
+        let title = "Erro de Login com Google";
+        let description = "Não foi possível completar o login. Tente novamente.";
+         if (error.code === 'auth/unauthorized-domain') {
             title = "Domínio não Autorizado";
-            description = "O domínio do aplicativo não está autorizado. Vá ao seu Firebase Console > Authentication > Settings > Authorized domains e adicione o domínio da sua aplicação.";
+            description = "O domínio da sua aplicação não está autorizado. Vá ao seu Firebase Console, em Authentication > Settings > Authorized domains, e adicione o domínio.";
         }
         toast({
             title: title,
             description: description,
             variant: "destructive"
         });
-      }
-    };
-    processRedirectResult();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      })
+      .finally(() => {
+        setIsGoogleLoading(false);
+      });
+      
+    return () => unsubscribe();
   }, [router]);
 
 
@@ -97,12 +100,14 @@ export function LoginForm() {
     const errorTitle = isRegisterMode ? "Erro de Registro" : "Erro de Login";
     
     try {
-        await action(auth, values.email, values.password);
-        toast({
-            title: successTitle,
-            description: "Redirecionando para o seu dashboard...",
-        });
-        router.push('/dashboard');
+        const userCredential = await action(auth, values.email, values.password);
+        if (userCredential.user) {
+          toast({
+              title: successTitle,
+              description: "Redirecionando para o seu dashboard...",
+          });
+          router.push('/dashboard');
+        }
     } catch (error: any) {
         console.error(`Firebase ${isRegisterMode ? 'Register' : 'Login'} Error:`, error);
         let errorMessage = "Ocorreu um erro. Tente novamente.";
@@ -136,6 +141,7 @@ export function LoginForm() {
     setIsGoogleLoading(true);
     try {
       await signInWithRedirect(auth, googleProvider);
+      // The redirect will be handled by the useEffect hook.
     } catch (error: any) {
        console.error("Google Auth Redirect Error:", error);
        let title = "Erro de Login com Google";
