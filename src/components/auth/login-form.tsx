@@ -47,14 +47,11 @@ export function LoginForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        router.push('/dashboard');
-      }
-    });
-
-    getRedirectResult(auth)
-      .then((result) => {
+    // This effect should only check for the redirect result
+    const checkRedirectResult = async () => {
+      try {
+        setIsGoogleLoading(true);
+        const result = await getRedirectResult(auth);
         if (result && result.user) {
            toast({
             title: "Login bem-sucedido!",
@@ -62,8 +59,7 @@ export function LoginForm() {
           });
           router.push('/dashboard');
         }
-      })
-      .catch((error) => {
+      } catch (error: any) {
         console.error("Google Redirect Result Error:", error);
         let title = "Erro de Login com Google";
         let description = "Não foi possível completar o login. Tente novamente.";
@@ -76,11 +72,20 @@ export function LoginForm() {
             description: description,
             variant: "destructive"
         });
-      })
-      .finally(() => {
+      } finally {
         setIsGoogleLoading(false);
-      });
-      
+      }
+    };
+    
+    checkRedirectResult();
+  
+    // This effect handles auth state changes to redirect if already logged in.
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.push('/dashboard');
+      }
+    });
+
     return () => unsubscribe();
   }, [router]);
 
@@ -106,7 +111,7 @@ export function LoginForm() {
               title: successTitle,
               description: "Redirecionando para o seu dashboard...",
           });
-          router.push('/dashboard');
+          // onAuthStateChanged will handle the redirect
         }
     } catch (error: any) {
         console.error(`Firebase ${isRegisterMode ? 'Register' : 'Login'} Error:`, error);
@@ -141,7 +146,6 @@ export function LoginForm() {
     setIsGoogleLoading(true);
     try {
       await signInWithRedirect(auth, googleProvider);
-      // The redirect will be handled by the useEffect hook.
     } catch (error: any) {
        console.error("Google Auth Redirect Error:", error);
        let title = "Erro de Login com Google";
