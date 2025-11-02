@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
 
@@ -45,45 +46,17 @@ export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(true); // Start as true
+  const [isGoogleLoading, setIsGoogleLoading] = useState(true);
 
   useEffect(() => {
-    // This effect handles both redirect results and auth state changes.
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // If a user is detected, redirect to dashboard.
+        setIsLoading(true);
         router.push('/dashboard');
         return;
       }
-
-      // If no user, check for a redirect result.
-      // This runs only once after a potential redirect.
-      try {
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          toast({
-            title: "Login bem-sucedido!",
-            description: "Bem-vindo(a) de volta.",
-          });
-          // The onAuthStateChanged will trigger again with the new user and handle the redirect.
-        }
-      } catch (error: any) {
-        console.error("Google Redirect Result Error:", error);
-        let title = "Erro de Login com Google";
-        let description = "Não foi possível completar o login. Tente novamente.";
-         if (error.code === 'auth/unauthorized-domain') {
-            title = "Domínio não Autorizado";
-            description = "O domínio da sua aplicação não está autorizado. Vá ao seu Firebase Console, em Authentication > Settings > Authorized domains, e adicione o domínio.";
-        }
-        toast({
-            title: title,
-            description: description,
-            variant: "destructive"
-        });
-      } finally {
-        // We are done loading, whether there was a user or not.
-        setIsGoogleLoading(false);
-      }
+      // If no user, we are not in a redirect flow, so we can stop loading.
+      setIsGoogleLoading(false);
     });
 
     return () => unsubscribe();
@@ -145,23 +118,33 @@ export function LoginForm() {
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
     try {
-      await signInWithRedirect(auth, googleProvider);
+      await signInWithPopup(auth, googleProvider);
+      // On success, onAuthStateChanged will trigger and handle the redirect.
+      toast({
+        title: "Login com Google bem-sucedido!",
+        description: "Redirecionando para o seu dashboard...",
+      });
     } catch (error: any) {
-       console.error("Google Auth Redirect Error:", error);
+       console.error("Google Auth Popup Error:", error);
        let title = "Erro de Login com Google";
-       let description = "Não foi possível iniciar o login com o Google.";
+       let description = "Não foi possível completar o login.";
 
-       if (error.code === 'auth/unauthorized-domain') {
+       if (error.code === 'auth/popup-blocked') {
+            title = "Pop-up Bloqueado";
+            description = "Seu navegador bloqueou o pop-up de login do Google. Por favor, habilite pop-ups para este site e tente novamente.";
+       } else if (error.code === 'auth/unauthorized-domain') {
             title = "AÇÃO NECESSÁRIA: Domínio Não Autorizado";
             description = "O domínio da sua aplicação não está autorizado no Firebase. Para corrigir, acesse seu Firebase Console > Authentication > Settings > Authorized domains e adicione o domínio. Este passo é crucial para a segurança.";
        }
+
        toast({
         title: title,
         description: description,
         variant: "destructive",
         duration: 9000,
       });
-       setIsGoogleLoading(false);
+    } finally {
+        setIsGoogleLoading(false);
     }
   }
   
