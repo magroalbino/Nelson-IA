@@ -16,10 +16,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowRight, LogIn, UserPlus } from "lucide-react";
+import { ArrowRight, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
+import { Loader2 } from "lucide-react";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -44,20 +45,27 @@ export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(true); // Start as true
 
   useEffect(() => {
-    // This effect should only check for the redirect result
-    const checkRedirectResult = async () => {
+    // This effect handles both redirect results and auth state changes.
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // If a user is detected, redirect to dashboard.
+        router.push('/dashboard');
+        return;
+      }
+
+      // If no user, check for a redirect result.
+      // This runs only once after a potential redirect.
       try {
-        setIsGoogleLoading(true);
         const result = await getRedirectResult(auth);
         if (result && result.user) {
-           toast({
+          toast({
             title: "Login bem-sucedido!",
             description: "Bem-vindo(a) de volta.",
           });
-          router.push('/dashboard');
+          // The onAuthStateChanged will trigger again with the new user and handle the redirect.
         }
       } catch (error: any) {
         console.error("Google Redirect Result Error:", error);
@@ -73,16 +81,8 @@ export function LoginForm() {
             variant: "destructive"
         });
       } finally {
+        // We are done loading, whether there was a user or not.
         setIsGoogleLoading(false);
-      }
-    };
-    
-    checkRedirectResult();
-  
-    // This effect handles auth state changes to redirect if already logged in.
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        router.push('/dashboard');
       }
     });
 
@@ -152,13 +152,14 @@ export function LoginForm() {
        let description = "Não foi possível iniciar o login com o Google.";
 
        if (error.code === 'auth/unauthorized-domain') {
-            title = "Domínio não Autorizado";
-            description = "O domínio da sua aplicação não está autorizado. Vá ao seu Firebase Console, em Authentication > Settings > Authorized domains, e adicione o domínio. Este passo é crucial para a segurança.";
+            title = "AÇÃO NECESSÁRIA: Domínio Não Autorizado";
+            description = "O domínio da sua aplicação não está autorizado no Firebase. Para corrigir, acesse seu Firebase Console > Authentication > Settings > Authorized domains e adicione o domínio. Este passo é crucial para a segurança.";
        }
        toast({
         title: title,
         description: description,
         variant: "destructive",
+        duration: 9000,
       });
        setIsGoogleLoading(false);
     }
@@ -290,7 +291,7 @@ export function LoginForm() {
       
       <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={anyLoading}>
         {isGoogleLoading ? (
-            <LogIn className="animate-spin mr-2 h-4 w-4" />
+            <Loader2 className="animate-spin mr-2 h-4 w-4" />
         ) : (
             <GoogleIcon className="mr-2 h-4 w-4"/>
         )}
@@ -299,3 +300,5 @@ export function LoginForm() {
     </div>
   );
 }
+
+    
