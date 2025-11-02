@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, LogIn, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, getRedirectResult, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -43,10 +43,12 @@ export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(true);
 
   useEffect(() => {
     getRedirectResult(auth)
       .then((result) => {
+        setIsGoogleLoading(false);
         if (result && result.user) {
           toast({
             title: "Login bem-sucedido!",
@@ -56,11 +58,16 @@ export function LoginForm() {
         }
       })
       .catch((error) => {
+        setIsGoogleLoading(false);
         if (error.code !== 'auth/no-redirect-operation') {
           console.error("Redirect result error:", error);
+          let description = "Não foi possível completar o login via redirecionamento.";
+          if(error.code === 'auth/unauthorized-domain') {
+            description = "O domínio do aplicativo não está autorizado no Firebase. Adicione-o no seu Firebase Console em Authentication > Settings > Authorized domains.";
+          }
           toast({
             title: "Erro de Login",
-            description: "Não foi possível completar o login via redirecionamento.",
+            description,
             variant: "destructive"
           });
         }
@@ -120,40 +127,25 @@ export function LoginForm() {
   }
 
   async function handleGoogleSignIn() {
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      if (result.user) {
-        toast({
-          title: "Login com Google bem-sucedido!",
-          description: "Redirecionando para o seu dashboard...",
-        });
-        router.push('/dashboard');
-      }
+      // Use redirect method, the result is handled by the useEffect hook
+      await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
-       console.error("Google Popup Auth Error:", error);
+       console.error("Google Auth Redirect Error:", error);
        let title = "Erro de Login com Google";
-       let description = "Não foi possível completar o login com o Google.";
+       let description = "Não foi possível iniciar o login com o Google.";
 
        if (error.code === 'auth/unauthorized-domain') {
             title = "Domínio não Autorizado";
             description = "O domínio da sua aplicação não está autorizado para autenticação Firebase. Vá ao seu Firebase Console > Authentication > Settings > Authorized domains e adicione o domínio.";
-       } else if (error.code === 'auth/popup-blocked') {
-           title = "Pop-up Bloqueado";
-           description = "O seu navegador bloqueou a janela de login. Por favor, permita pop-ups para este site e tente novamente.";
-       } else if (error.code === 'auth/popup-closed-by-user') {
-           // No need to show a toast if the user intentionally closes the popup.
-           setIsLoading(false);
-           return;
        }
-
        toast({
         title: title,
         description: description,
         variant: "destructive",
       });
-    } finally {
-       setIsLoading(false);
+       setIsGoogleLoading(false);
     }
   }
   
@@ -194,6 +186,8 @@ export function LoginForm() {
     }
   }
 
+  const anyLoading = isLoading || isGoogleLoading;
+
   return (
     <div className="grid gap-6">
        <Form {...form}>
@@ -205,7 +199,7 @@ export function LoginForm() {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="Seu@email.com" {...field} disabled={isLoading} />
+                  <Input placeholder="Seu@email.com" {...field} disabled={anyLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -223,20 +217,20 @@ export function LoginForm() {
                       type="button"
                       onClick={handlePasswordReset}
                       className="ml-auto inline-block text-sm text-primary/80 underline-offset-4 hover:text-primary hover:underline focus:outline-none disabled:opacity-50"
-                      disabled={isLoading}
+                      disabled={anyLoading}
                     >
                       Esqueceu sua senha?
                     </button>
                   )}
                 </div>
                 <FormControl>
-                  <Input type="password" placeholder="Sua senha" {...field} disabled={isLoading} />
+                  <Input type="password" placeholder="Sua senha" {...field} disabled={anyLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full group" size="lg" disabled={isLoading}>
+          <Button type="submit" className="w-full group" size="lg" disabled={anyLoading}>
             {isLoading && isRegisterMode ? (
                 <span>Registrando...</span>
             ) : isLoading ? (
@@ -262,7 +256,7 @@ export function LoginForm() {
                 type="button"
                 onClick={() => setIsRegisterMode(!isRegisterMode)}
                 className="font-semibold text-primary underline-offset-4 hover:underline disabled:opacity-50"
-                disabled={isLoading}
+                disabled={anyLoading}
             >
                 {isRegisterMode ? "Faça login" : "Registre-se aqui"}
             </button>
@@ -279,8 +273,8 @@ export function LoginForm() {
         </div>
       </div>
       
-      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-        {isLoading ? (
+      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={anyLoading}>
+        {isGoogleLoading ? (
             <LogIn className="animate-spin mr-2 h-4 w-4" />
         ) : (
             <GoogleIcon className="mr-2 h-4 w-4"/>
