@@ -28,7 +28,7 @@ export default function Home() {
             src="/assets/logo-nelson-3.png"
             alt="Nelson IA Logo"
             fill
-            className="object-contain opacity-20"
+            className="object-contain"
             sizes="50vw"
             priority
           />
