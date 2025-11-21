@@ -56,9 +56,7 @@ export function AppSidebar() {
     >
       <SidebarContent>
         <SidebarHeader className="p-4 flex items-center justify-between h-16">
-          <Link href="/dashboard" className="flex items-center gap-2" aria-label="Home">
-            <span className="font-semibold text-lg group-data-[collapsible=icon]:hidden">Nelson IA</span>
-          </Link>
+          {/* O nome foi removido daqui */}
         </SidebarHeader>
 
         <SidebarMenu className="flex-1 p-2">
