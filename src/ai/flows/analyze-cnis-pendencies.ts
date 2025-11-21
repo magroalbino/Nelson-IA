@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview An AI agent for analyzing CNIS pendencies (indicators) and providing a strategic overview.
+ * @fileOverview An AI agent for analyzing CNIS pendencies (indicators) and providing a strategic overview from a document.
  *
  * - analyzeCnisPendencies - A function that handles the CNIS pendency analysis process.
  * - AnalyzeCnisPendenciesInput - The input type for the analyzeCnisPendencies function.
@@ -12,9 +12,11 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeCnisPendenciesInputSchema = z.object({
-  cnisText: z
+  cnisDocumentUri: z
     .string()
-    .describe('The full text content of the CNIS document.'),
+    .describe(
+      "A CNIS document, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
 });
 export type AnalyzeCnisPendenciesInput = z.infer<typeof AnalyzeCnisPendenciesInputSchema>;
 
@@ -40,10 +42,9 @@ const prompt = ai.definePrompt({
   name: 'analyzeCnisPendenciesPrompt',
   input: {schema: AnalyzeCnisPendenciesInputSchema},
   output: {schema: AnalyzeCnisPendenciesOutputSchema},
-  prompt: `Olá! Sou o Nelson, seu assistente previdenciário. Minha especialidade é decifrar os detalhes de um Extrato de Contribuição (CNIS) do INSS. Minha tarefa é realizar uma análise completa e estratégica do texto do CNIS fornecido, como um advogado sênior faria, baseando-me nas normas e legislação do INSS.
+  prompt: `Olá! Sou o Nelson, seu assistente previdenciário. Minha especialidade é decifrar os detalhes de um Extrato de Contribuição (CNIS) do INSS. Minha tarefa é realizar uma análise completa e estratégica do documento CNIS fornecido, como um advogado sênior faria, baseando-me nas normas e legislação do INSS.
 
-Vamos analisar juntos o texto do CNIS:
-{{{cnisText}}}
+Vamos analisar juntos o documento CNIS: {{media url=cnisDocumentUri}}
 
 Minha análise será dividida em duas partes para facilitar nosso entendimento:
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import React, { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { analyzeCnisAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
@@ -12,14 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileScan, Loader2, ServerCrash, Lightbulb, AlertTriangle } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
+import { FileUploadCard } from "@/components/file-upload-card";
 
 const initialState = {
   message: null,
@@ -27,17 +25,20 @@ const initialState = {
   data: null,
 };
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} size="lg">
+    <Button type="submit" disabled={pending || disabled} size="lg">
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           Analisando...
         </>
       ) : (
-        "Analisar CNIS"
+        <>
+          <FileScan className="mr-2 h-4 w-4"/>
+          Analisar CNIS
+        </>
       )}
     </Button>
   );
@@ -45,7 +46,12 @@ function SubmitButton() {
 
 export default function CnisAnalyzerPage() {
   const [state, formAction] = useActionState(analyzeCnisAction, initialState);
+  const [cnisDocumentUri, setCnisDocumentUri] = useState("");
 
+  const handleFileSelect = (file: File | null, dataUri: string) => {
+    setCnisDocumentUri(dataUri);
+  };
+  
   useEffect(() => {
     if (state.message) {
       toast({
@@ -62,26 +68,22 @@ export default function CnisAnalyzerPage() {
         <CardHeader>
           <CardTitle>Analisador Estratégico de CNIS</CardTitle>
           <CardDescription>
-            Copie e cole o conteúdo completo do CNIS (em formato de texto) abaixo. A IA irá identificar pendências, sugerir ações e fornecer um resumo estratégico completo.
+            Faça o upload do documento CNIS (em formato PDF ou imagem). A IA irá identificar pendências, sugerir ações e fornecer um resumo estratégico completo.
           </CardDescription>
         </CardHeader>
         <form action={formAction}>
           <CardContent>
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="cnisData">Conteúdo do CNIS</Label>
-              <Textarea
-                id="cnisData"
-                name="cnisData"
-                placeholder="Cole o texto do seu CNIS aqui..."
-                className="min-h-[300px] font-mono text-xs"
-              />
-              {state.errors?.cnisData && (
-                <p className="text-sm text-destructive mt-2">{state.errors.cnisData[0]}</p>
+             <input type="hidden" name="cnisDocumentUri" value={cnisDocumentUri} />
+             <FileUploadCard 
+                onFileSelect={handleFileSelect}
+                acceptedFileTypes={["application/pdf", "image/jpeg", "image/png"]}
+             />
+              {state.errors?.cnisDocumentUri && (
+                <p className="text-sm text-destructive mt-2">{state.errors.cnisDocumentUri[0]}</p>
               )}
-            </div>
           </CardContent>
-          <CardFooter>
-            <SubmitButton />
+          <CardFooter className="flex justify-end">
+            <SubmitButton disabled={!cnisDocumentUri} />
           </CardFooter>
         </form>
       </Card>

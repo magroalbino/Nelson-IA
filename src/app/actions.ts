@@ -6,6 +6,7 @@ import { analyzeCnisPendencies } from "@/ai/flows/analyze-cnis-pendencies";
 import { extractPapData } from "@/ai/flows/extract-pap-data";
 import { analyzePppDocument } from "@/ai/flows/analyze-ppp-document";
 import { analyzeRetirementEligibility } from "@/ai/flows/analyze-retirement-eligibility";
+import React from "react";
 
 // Schema for Legal Petition Generation
 const petitionSchema = z.object({
@@ -60,11 +61,11 @@ export async function generatePetitionAction(
 
 // Schema for CNIS Analysis
 const cnisSchema = z.object({
-    cnisData: z.string().min(50, "Os dados do CNIS parecem muito curtos. Por favor, cole o texto completo."),
+    cnisDocumentUri: z.string().min(1, 'O upload do documento CNIS é obrigatório.'),
 });
 
 interface CnisState {
-    errors?: { cnisData?: string[] };
+    errors?: { cnisDocumentUri?: string[] };
     message?: string | null;
     data?: {
       pendencies: {
@@ -79,7 +80,7 @@ interface CnisState {
 
 export async function analyzeCnisAction(prevState: CnisState, formData: FormData): Promise<CnisState> {
     const validatedFields = cnisSchema.safeParse({
-        cnisData: formData.get("cnisData"),
+        cnisDocumentUri: formData.get("cnisDocumentUri"),
     });
 
     if (!validatedFields.success) {
@@ -90,7 +91,7 @@ export async function analyzeCnisAction(prevState: CnisState, formData: FormData
     }
 
     try {
-        const result = await analyzeCnisPendencies({ cnisText: validatedFields.data.cnisData });
+        const result = await analyzeCnisPendencies({ cnisDocumentUri: validatedFields.data.cnisDocumentUri });
         return {
             message: 'Análise do CNIS concluída!',
             data: result,
@@ -98,7 +99,7 @@ export async function analyzeCnisAction(prevState: CnisState, formData: FormData
     } catch (error) {
         console.error(error);
         return {
-            message: 'Falha ao analisar o CNIS. Tente novamente.',
+            message: 'Falha ao analisar o CNIS. O formato do arquivo pode ser inválido ou o documento estar ilegível.',
         };
     }
 }
