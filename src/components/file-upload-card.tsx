@@ -8,7 +8,7 @@ import { UploadCloud, File as FileIcon, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface FileUploadCardProps {
-  onFileSelect: (file: File, dataUri: string) => void;
+  onFileSelect: (file: File | null, dataUri: string) => void;
   acceptedFileTypes?: string[];
   maxFileSize?: number; // in bytes
 }
@@ -25,6 +25,11 @@ export function FileUploadCard({
   const { toast } = useToast();
 
   const handleFile = useCallback((selectedFile: File) => {
+    if (!selectedFile) {
+        if (file) removeFile();
+        return;
+    }
+    
     if (!acceptedFileTypes.includes(selectedFile.type)) {
       toast({
         variant: "destructive",
@@ -66,7 +71,7 @@ export function FileUploadCard({
       setFile(null);
     }
     reader.readAsDataURL(selectedFile);
-  }, [acceptedFileTypes, maxFileSize, onFileSelect, toast]);
+  }, [acceptedFileTypes, maxFileSize, onFileSelect, toast, file]);
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -94,6 +99,8 @@ export function FileUploadCard({
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       handleFile(e.target.files[0]);
+    } else {
+      handleFile(null!);
     }
   };
 
@@ -108,13 +115,13 @@ export function FileUploadCard({
   
   return (
     <Card 
-      className={`border-2 border-dashed ${isDragging ? "border-primary bg-accent" : ""}`}
+      className={`border-2 border-dashed transition-colors ${isDragging ? "border-primary bg-accent" : "hover:border-primary/50 hover:bg-accent/50"}`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <CardContent className="p-6 text-center">
+      <CardContent className="p-0">
         <input
           ref={inputRef}
           type="file"
@@ -123,27 +130,20 @@ export function FileUploadCard({
           accept={acceptedFileTypes.join(",")}
         />
         {!file ? (
-          <>
-            <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">
-              Arraste e solte o arquivo aqui
+          <div 
+             className="flex flex-col items-center justify-center p-6 text-center cursor-pointer space-y-2"
+             onClick={() => inputRef.current?.click()}
+          >
+            <UploadCloud className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h3 className="text-base font-medium">
+              Clique para selecionar ou arraste o arquivo aqui
             </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              ou
+            <p className="text-xs text-muted-foreground">
+              {acceptedFileTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} até {maxFileSize / (1024*1024)}MB
             </p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => inputRef.current?.click()}
-            >
-              Selecione o Arquivo
-            </Button>
-            <p className="mt-2 text-xs text-muted-foreground">
-              PDF ou CSV, até 5MB
-            </p>
-          </>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="p-4 space-y-4">
              <div className="flex items-center justify-between rounded-md border p-3 text-left">
                 <div className="flex items-center gap-3">
                     <FileIcon className="h-8 w-8 text-primary" />
@@ -157,7 +157,7 @@ export function FileUploadCard({
                 </Button>
              </div>
              <Progress value={progress} className="w-full" />
-             {progress === 100 && <p className="text-sm text-green-600">Arquivo pronto para análise!</p>}
+             {progress === 100 && <p className="text-sm text-green-600 text-center">Arquivo pronto para análise!</p>}
           </div>
         )}
       </CardContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState, ChangeEvent } from "react";
 import { useFormStatus } from "react-dom";
 import { analyzePapAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { FileText, Loader2, ServerCrash } from "lucide-react";
-import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { FileUploadCard } from "@/components/file-upload-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -52,9 +51,9 @@ export default function PapAnalyzerPage() {
   useEffect(() => {
     if (state.message) {
       toast({
-        title: state.errors ? "Erro" : "Sucesso!",
+        title: state.errors || !state.data ? "Erro" : "Sucesso!",
         description: state.message,
-        variant: state.errors ? "destructive" : "default",
+        variant: state.errors || !state.data ? "destructive" : "default",
       });
     }
   }, [state]);
@@ -65,13 +64,16 @@ export default function PapAnalyzerPage() {
         <CardHeader>
           <CardTitle>Analisador de PAP</CardTitle>
           <CardDescription>
-            Faça upload do seu Perfil de Atividade Profissional (PAP) em formato PDF ou CSV para validar vínculos e períodos de atividade.
+            Faça upload do seu Perfil de Atividade Profissional (PAP) em formato PDF ou imagem para validar vínculos e períodos de atividade.
           </CardDescription>
         </CardHeader>
         <form action={formAction}>
           <CardContent>
             <input type="hidden" name="papDataUri" value={papDataUri} />
-            <FileUploadCard onFileSelect={handleFileSelect} />
+            <FileUploadCard 
+              onFileSelect={handleFileSelect} 
+              acceptedFileTypes={["application/pdf", "image/jpeg", "image/png"]}
+            />
             {state.errors?.papDataUri && (
                 <p className="text-sm text-destructive mt-2">{state.errors.papDataUri[0]}</p>
               )}
