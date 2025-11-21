@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 222.9 21.4% 95.1%;
     --foreground: 224 71.4% 4.1%;
-    --card: 0 0% 100%;
+    --card: 222.9 21.4% 95.1%;
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
@@ -25,10 +25,10 @@
     --ring: 224 71.4% 4.1%;
     --radius: 0.5rem;
 
-    --sidebar-background: 220 14.3% 98.9%;
+    --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 224 71.4% 4.1%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-accent: 220 14.3% 92.9%;
+    --sidebar-accent: 220 14.3% 95.9%;
     --sidebar-accent-foreground: 220.9 39.3% 11%;
     --sidebar-primary: 217 91.2% 59.8%;
     --sidebar-primary-foreground: 210 20% 98%;
@@ -75,5 +75,25 @@
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  /* Custom styles for the active menu item indicator */
+  [data-sidebar="menu-button"][data-active="true"] {
+    @apply bg-transparent text-primary;
+  }
+
+  [data-sidebar="menu-button"][data-active="true"]::before {
+    content: '';
+    @apply absolute -left-1 top-1/2 h-6 w-1 -translate-y-1/2 scale-y-100 rounded-full bg-primary transition-transform;
+  }
+  
+  .group-data-\[collapsible\=icon\]\:hidden [data-sidebar="menu-button"][data-active="true"]::before {
+    @apply scale-y-0;
+  }
+
+  .group-data-\[collapsible\=icon\] [data-sidebar="menu-button"][data-active="true"]::before {
+     @apply absolute left-1/2 top-auto bottom-0 h-1 w-4 -translate-x-1/2 scale-x-100 rounded-full bg-primary transition-transform;
   }
 }
