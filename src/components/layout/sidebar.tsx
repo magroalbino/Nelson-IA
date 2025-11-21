@@ -12,7 +12,6 @@ import {
   SidebarGroupLabel,
   SidebarContent,
   SidebarFooter,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -22,6 +21,7 @@ import {
   LayoutDashboard,
   ShieldAlert,
   Calculator,
+  ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -46,12 +46,18 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { state, toggleSidebar } = useSidebar();
 
+  const CollapseIcon = state === 'expanded' ? ChevronsLeft : ChevronsRight;
+
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <Sidebar 
+      collapsible="icon" 
+      variant="inset"
+      className="bg-sidebar/95 backdrop-blur supports-[backdrop-filter]:bg-sidebar/60"
+    >
       <SidebarContent>
-        <SidebarHeader className="p-4">
+        <SidebarHeader className="p-4 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2" aria-label="Home">
-            <Logo className="w-8 h-auto transition-transform duration-300 group-data-[collapsible=icon]:-rotate-180" />
+            <Logo className="w-8 h-auto transition-transform duration-300" />
             <span className="font-semibold text-lg group-data-[collapsible=icon]:hidden">Nelson IA</span>
           </Link>
         </SidebarHeader>
@@ -63,6 +69,7 @@ export function AppSidebar() {
                   asChild
                   isActive={pathname === item.href}
                   tooltip={item.label}
+                  size="lg"
                 >
                   <Link href={item.href}>
                     <item.icon />
@@ -72,7 +79,7 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
 
-          <SidebarSeparator />
+          <SidebarSeparator className="my-3"/>
 
           <SidebarGroup>
             <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Análises</SidebarGroupLabel>
@@ -92,7 +99,7 @@ export function AppSidebar() {
               ))}
           </SidebarGroup>
 
-          <SidebarSeparator />
+          <SidebarSeparator className="my-3"/>
 
           <SidebarGroup>
               <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Geração</SidebarGroupLabel>
@@ -113,9 +120,9 @@ export function AppSidebar() {
           </SidebarGroup>
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="p-2">
+      <SidebarFooter className="p-2 border-t">
          <SidebarMenuButton onClick={toggleSidebar} tooltip={state === 'expanded' ? "Recolher" : "Expandir"}>
-            <ChevronsRight className="transition-transform duration-300 group-data-[state=expanded]:rotate-180" />
+            <CollapseIcon />
             <span className="group-data-[collapsible=icon]:hidden">{state === 'expanded' ? "Recolher Menu" : "Expandir Menu"}</span>
           </SidebarMenuButton>
       </SidebarFooter>

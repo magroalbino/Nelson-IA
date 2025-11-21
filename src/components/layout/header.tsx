@@ -19,6 +19,7 @@ import { signOut } from "firebase/auth";
 import Link from "next/link";
 import { Skeleton } from "../ui/skeleton";
 import { Logo } from "../icons";
+import { ThemeToggle } from "../theme-toggle";
 
 export function AppHeader() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export function AppHeader() {
   const avatarFallback = userEmail ? userEmail.charAt(0).toUpperCase() : <UserIcon />;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border/50 bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="md:hidden"/>
         <Link href="/dashboard" className="hidden items-center gap-2 font-semibold md:flex" aria-label="Home">
@@ -44,6 +45,7 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         {loading ? (
             <Skeleton className="h-9 w-9 rounded-full" />
         ) : (
