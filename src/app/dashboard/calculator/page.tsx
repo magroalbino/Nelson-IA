@@ -14,14 +14,15 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Calculator, Clock, FileClock, Loader2, ServerCrash, User, Calendar, ListChecks } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { Calculator, Clock, FileClock, Loader2, ServerCrash, User, Calendar, ListChecks, UploadCloud } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { calculateContributionPeriod, sumContributionPeriods, type ContributionTime } from "@/lib/calculation-engine";
+import { FileUploadCard } from "@/components/file-upload-card";
 
 const initialState = {
   message: null,
@@ -29,10 +30,10 @@ const initialState = {
   data: null,
 };
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} size="lg">
+    <Button type="submit" disabled={pending || disabled} size="lg">
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -64,6 +65,12 @@ function TimeDisplay({ time }: { time: ContributionTime }) {
 
 export default function CalculatorPage() {
   const [state, formAction] = useActionState(analyzeRetirementAction, initialState);
+  const [cnisUri, setCnisUri] = useState("");
+  const [papUri, setPapUri] = useState("");
+  const [pppUri, setPppUri] = useState("");
+
+  const isSubmitDisabled = !cnisUri && !papUri && !pppUri;
+
 
   const totalContributionTime = useMemo<ContributionTime | null>(() => {
     if (!state.data?.vinculos) return null;
@@ -98,26 +105,45 @@ export default function CalculatorPage() {
         <CardHeader>
           <CardTitle>Calculadora Previdenciária Completa</CardTitle>
           <CardDescription>
-            Cole os dados consolidados do segurado (resumos do CNIS, PAP, PPP) no campo abaixo. A IA irá extrair os vínculos e o sistema calculará o tempo total de contribuição.
+            Faça o upload dos documentos do segurado (CNIS, PAP, PPP). A IA irá extrair os vínculos e o sistema calculará o tempo total de contribuição.
           </CardDescription>
         </CardHeader>
         <form action={formAction}>
-          <CardContent>
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="collectedData">Dados Consolidados do Segurado</Label>
-              <Textarea
-                id="collectedData"
-                name="collectedData"
-                placeholder="Cole aqui o resumo do CNIS, os vínculos do PAP e a análise do PPP..."
-                className="min-h-[300px] font-mono text-sm"
-              />
-              {state.errors?.collectedData && (
-                <p className="text-sm text-destructive">{state.errors.collectedData[0]}</p>
-              )}
+          <CardContent className="space-y-6">
+             <input type="hidden" name="cnisDocumentUri" value={cnisUri} />
+             <input type="hidden" name="papDocumentUri" value={papUri} />
+             <input type="hidden" name="pppDocumentUri" value={pppUri} />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><UploadCloud className="w-4 h-4"/> CNIS (.pdf, .jpg, .png)</Label>
+                    <FileUploadCard onFileSelect={(_, dataUri) => setCnisUri(dataUri)} acceptedFileTypes={["application/pdf", "image/jpeg", "image/png"]} />
+                </div>
+                <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><UploadCloud className="w-4 h-4"/> PAP (.pdf, .jpg, .png)</Label>
+                    <FileUploadCard onFileSelect={(_, dataUri) => setPapUri(dataUri)} acceptedFileTypes={["application/pdf", "image/jpeg", "image/png"]} />
+                </div>
+                <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><UploadCloud className="w-4 h-4"/> PPP (.pdf, .jpg, .png)</Label>
+                    <FileUploadCard onFileSelect={(_, dataUri) => setPppUri(dataUri)} acceptedFileTypes={["application/pdf", "image/jpeg", "image/png"]} />
+                </div>
             </div>
+            
+            <div className="grid w-full gap-1.5">
+              <Label htmlFor="additionalData">Informações Adicionais (Opcional)</Label>
+              <Textarea
+                id="additionalData"
+                name="additionalData"
+                placeholder="Se houver alguma informação extra que não está nos documentos, descreva aqui..."
+                className="min-h-[100px]"
+              />
+            </div>
+             {state.errors?.cnisDocumentUri && (
+                <p className="text-sm text-destructive">{state.errors.cnisDocumentUri[0]}</p>
+              )}
           </CardContent>
           <CardFooter>
-            <SubmitButton />
+            <SubmitButton disabled={isSubmitDisabled} />
           </CardFooter>
         </form>
       </Card>
