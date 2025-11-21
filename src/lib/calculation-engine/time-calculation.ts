@@ -1,5 +1,3 @@
-'use server';
-
 import { parse, differenceInDays, add } from 'date-fns';
 
 /**
