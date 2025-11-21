@@ -46,7 +46,7 @@ export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false); // Changed initial state
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [user, setUser] = useState<FirebaseUser | null>(null);
 
   useEffect(() => {
