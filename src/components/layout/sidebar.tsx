@@ -54,12 +54,8 @@ export function AppSidebar() {
       variant="inset"
       className="bg-sidebar/95 backdrop-blur supports-[backdrop-filter]:bg-sidebar/60"
     >
-      <SidebarContent>
-        <SidebarHeader className="p-4 flex items-center justify-between h-16">
-          {/* O nome foi removido daqui */}
-        </SidebarHeader>
-
-        <SidebarMenu className="flex-1 p-2">
+      <SidebarContent className="flex-1 p-2">
+        <SidebarMenu className="flex-1">
           {mainMenuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
