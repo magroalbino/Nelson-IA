@@ -22,7 +22,6 @@ import {
   Calculator,
   ChevronsLeft,
   ChevronsRight,
-  User,
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/icons";
@@ -55,18 +54,6 @@ export function AppSidebar() {
       className="bg-sidebar/95 backdrop-blur supports-[backdrop-filter]:bg-sidebar/60"
     >
       <SidebarContent className="flex-1 p-2">
-        <div className="flex items-center justify-center p-2 group-data-[collapsible=icon]:hidden">
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold" aria-label="Home">
-              <Logo className="w-8 h-auto" />
-              <span className="text-lg font-bold">Nelson IA</span>
-          </Link>
-        </div>
-        <div className="hidden items-center justify-center p-2 group-data-[collapsible=icon]:flex">
-            <Link href="/dashboard" aria-label="Home">
-                <Logo className="w-8 h-auto" />
-            </Link>
-        </div>
-
         <SidebarMenu className="flex-1 mt-4">
           {mainMenuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
