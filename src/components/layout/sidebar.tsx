@@ -65,7 +65,6 @@ export function AppSidebar() {
                   asChild
                   data-active={pathname === item.href}
                   tooltip={item.label}
-                  size="lg"
                   className="relative"
                 >
                   <Link href={item.href}>
