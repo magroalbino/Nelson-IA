@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning className="dark">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>

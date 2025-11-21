@@ -31,14 +31,14 @@ export default function Home() {
               src={loginImage.imageUrl}
               alt={loginImage.description}
               fill
-              className="object-cover opacity-30"
+              className="object-cover opacity-20"
               sizes="50vw"
               priority
               data-ai-hint={loginImage.imageHint}
             />
           )}
            <div className="relative z-10 text-white max-w-2xl w-full">
-             <div className="bg-gradient-to-t from-black/50 via-black/20 to-transparent p-8 rounded-lg">
+             <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent p-8 rounded-lg">
                 <AnimatedFeatureText />
               </div>
           </div>

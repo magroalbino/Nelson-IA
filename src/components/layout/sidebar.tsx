@@ -10,6 +10,10 @@ import {
   SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
+  SidebarContent,
+  SidebarFooter,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   FileScan,
@@ -18,6 +22,7 @@ import {
   LayoutDashboard,
   ShieldAlert,
   Calculator,
+  ChevronsRight,
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/icons";
@@ -39,70 +44,81 @@ const generationTools = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { state, toggleSidebar } = useSidebar();
 
-  // Esta sidebar agora só aparece em mobile, controlada pelo SidebarProvider/Sheet
   return (
-    <Sidebar collapsible="offcanvas">
-      <SidebarHeader>
-        <Link href="/dashboard" className="flex items-center gap-2 p-2" aria-label="Home">
-           <Logo className="w-10 h-auto" />
-           <span className="font-semibold text-lg">Nelson IA</span>
-        </Link>
-      </SidebarHeader>
+    <Sidebar collapsible="icon" className="border-r border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <SidebarContent>
+        <SidebarHeader className="p-4">
+          <Link href="/dashboard" className="flex items-center gap-2" aria-label="Home">
+            <Logo className="w-8 h-auto transition-transform duration-300 group-data-[collapsible=icon]:-rotate-180" />
+            <span className="font-semibold text-lg group-data-[collapsible=icon]:hidden">Nelson IA</span>
+          </Link>
+        </SidebarHeader>
 
-      <SidebarMenu className="flex-1 p-2">
-        {mainMenuItems.map((item) => (
-          <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-              >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
+        <SidebarMenu className="flex-1 p-2">
+          {mainMenuItems.map((item) => (
+            <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href}
+                  tooltip={item.label}
+                >
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
 
-        <SidebarSeparator />
+          <SidebarSeparator />
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Ferramentas de Análise</SidebarGroupLabel>
-            {analysisTools.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                  >
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-        </SidebarGroup>
+          <SidebarGroup>
+            <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Análises</SidebarGroupLabel>
+              {analysisTools.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href}
+                      tooltip={item.label}
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+          </SidebarGroup>
 
-        <SidebarSeparator />
+          <SidebarSeparator />
 
-        <SidebarGroup>
-            <SidebarGroupLabel>Geração de Documentos</SidebarGroupLabel>
-            {generationTools.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                  >
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-        </SidebarGroup>
-      </SidebarMenu>
+          <SidebarGroup>
+              <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Geração</SidebarGroupLabel>
+              {generationTools.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href}
+                      tooltip={item.label}
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+          </SidebarGroup>
+        </SidebarMenu>
+      </SidebarContent>
+      <SidebarFooter className="p-2">
+         <SidebarMenuButton onClick={toggleSidebar} tooltip={state === 'expanded' ? "Recolher" : "Expandir"}>
+            <ChevronsRight className="transition-transform duration-300 group-data-[state=expanded]:rotate-180" />
+            <span className="group-data-[collapsible=icon]:hidden">{state === 'expanded' ? "Recolher Menu" : "Expandir Menu"}</span>
+          </SidebarMenuButton>
+      </SidebarFooter>
     </Sidebar>
   );
 }

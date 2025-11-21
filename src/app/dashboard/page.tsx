@@ -72,7 +72,7 @@ export default function DashboardPage() {
       <main className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
             {featuredTools.map((tool) => (
-            <Card key={tool.href} className="flex flex-col group hover:border-primary/50 transition-all duration-300">
+            <Card key={tool.href} className="flex flex-col group bg-card/50 hover:bg-card/90 hover:border-primary/50 transition-all duration-300">
                 <CardHeader className="flex-row items-center gap-4 space-y-0">
                     <div className="bg-primary/10 p-3 rounded-lg">
                         {tool.icon}

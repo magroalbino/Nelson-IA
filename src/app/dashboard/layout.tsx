@@ -9,13 +9,14 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      {/* AppSidebar será renderizado como um Sheet em mobile */}
-      <AppSidebar />
-      <div className="flex flex-col min-h-screen">
-        <AppHeader />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-muted/40">
-          {children}
-        </main>
+      <div className="flex min-h-screen">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col">
+            <AppHeader />
+            <main className="flex-1 p-4 sm:p-6 lg:p-8">
+              {children}
+            </main>
+        </div>
       </div>
     </SidebarProvider>
   );
