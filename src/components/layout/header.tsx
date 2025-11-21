@@ -19,6 +19,7 @@ import { signOut } from "firebase/auth";
 import Link from "next/link";
 import { Skeleton } from "../ui/skeleton";
 import { ThemeToggle } from "../theme-toggle";
+import { Logo } from "../icons";
 
 export function AppHeader() {
   const router = useRouter();
@@ -38,6 +39,7 @@ export function AppHeader() {
       <div className="flex items-center gap-2">
         <SidebarTrigger className="md:hidden"/>
         <Link href="/dashboard" className="hidden items-center gap-2 font-semibold md:flex" aria-label="Home">
+            <Logo className="w-8 h-auto" />
             <span className="text-lg font-bold">Nelson IA</span>
         </Link>
       </div>

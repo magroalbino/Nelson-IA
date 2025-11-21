@@ -55,9 +55,8 @@ export function AppSidebar() {
       className="bg-sidebar/95 backdrop-blur supports-[backdrop-filter]:bg-sidebar/60"
     >
       <SidebarContent>
-        <SidebarHeader className="p-4 flex items-center justify-between">
+        <SidebarHeader className="p-4 flex items-center justify-between h-16">
           <Link href="/dashboard" className="flex items-center gap-2" aria-label="Home">
-            <Logo className="w-8 h-auto transition-transform duration-300" />
             <span className="font-semibold text-lg group-data-[collapsible=icon]:hidden">Nelson IA</span>
           </Link>
         </SidebarHeader>
