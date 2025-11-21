@@ -80,6 +80,10 @@
 
 @layer components {
   /* Custom styles for the active menu item indicator */
+  [data-sidebar="menu-button"]:hover {
+    @apply bg-transparent;
+  }
+  
   [data-sidebar="menu-button"][data-active="true"] {
     @apply bg-transparent text-primary;
   }
