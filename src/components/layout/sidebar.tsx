@@ -7,7 +7,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter,
   SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
@@ -19,7 +18,6 @@ import {
   LayoutDashboard,
   ShieldAlert,
   Calculator,
-  User,
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/icons";
@@ -39,15 +37,12 @@ const generationTools = [
     { href: "/dashboard/document-generator", label: "Gerador de Petições", icon: Gavel },
 ]
 
-const profileTools = [
-    { href: "/dashboard/profile", label: "Meu Perfil", icon: User },
-]
-
 export function AppSidebar() {
   const pathname = usePathname();
 
+  // Esta sidebar agora só aparece em mobile, controlada pelo SidebarProvider/Sheet
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="offcanvas">
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2 p-2" aria-label="Home">
            <Logo className="w-10 h-auto" />
@@ -61,7 +56,6 @@ export function AppSidebar() {
               <SidebarMenuButton
                 asChild
                 isActive={pathname === item.href}
-                tooltip={item.label}
               >
                 <Link href={item.href}>
                   <item.icon />
@@ -80,7 +74,6 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === item.href}
-                    tooltip={item.label}
                   >
                     <Link href={item.href}>
                       <item.icon />
@@ -100,7 +93,6 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === item.href}
-                    tooltip={item.label}
                   >
                     <Link href={item.href}>
                       <item.icon />
@@ -110,26 +102,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
             ))}
         </SidebarGroup>
-
       </SidebarMenu>
-      
-      <SidebarFooter className="p-2">
-        <SidebarSeparator className="mb-2" />
-        {profileTools.map((item) => (
-            <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-                tooltip={item.label}
-                >
-                <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-        ))}
-      </SidebarFooter>
     </Sidebar>
   );
 }
