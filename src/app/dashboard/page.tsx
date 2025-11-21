@@ -50,10 +50,16 @@ const quickAccessTools = [
     icon: <FileText className="w-5 h-5 text-muted-foreground" />,
   },
   {
+    title: "Calculadora Previdenciária",
+    description: "Calcule o tempo total de contribuição a partir dos documentos.",
+    href: "/dashboard/calculator",
+    icon: <Calculator className="w-5 h-5 text-muted-foreground" />,
+  },
+  {
     title: "Estruturador para Cálculo",
     description: "Compile e organize todos os dados para o cálculo de tempo.",
     href: "/dashboard/retirement-analyzer",
-    icon: <Calculator className="w-5 h-5 text-muted-foreground" />,
+    icon: <FileText className="w-5 h-5 text-muted-foreground" />,
   },
 ];
 

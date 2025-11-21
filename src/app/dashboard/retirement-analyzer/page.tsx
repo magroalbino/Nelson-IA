@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { FileClock, Loader2, ServerCrash, User, Calendar, ListChecks } from "lucide-react";
+import { FileClock, Loader2, ServerCrash, User, Calendar, ListChecks, FileText } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
@@ -61,9 +61,9 @@ export default function RetirementAnalyzerPage() {
     <div className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Analisador de Elegibilidade de Aposentadoria</CardTitle>
+          <CardTitle className="flex items-center gap-2"><FileText /> Estruturador de Dados para Cálculo</CardTitle>
           <CardDescription>
-            Consolide os dados do CNIS, PAP e PPP em um único campo. A IA irá extrair e estruturar todas as informações relevantes para que o cálculo preciso da aposentadoria possa ser feito.
+            Esta ferramenta utiliza IA para analisar e consolidar os dados do CNIS, PAP e PPP em um formato estruturado. Use o resultado aqui como entrada para a "Calculadora" ou outros sistemas.
           </CardDescription>
         </CardHeader>
         <form action={formAction}>
@@ -100,8 +100,8 @@ export default function RetirementAnalyzerPage() {
       {state.data && (
         <Card>
             <CardHeader>
-                <CardTitle>Dados Extraídos para Cálculo</CardTitle>
-                <CardDescription>A IA analisou os documentos e estruturou os seguintes dados. Estes são os insumos para a rotina de cálculo preciso.</CardDescription>
+                <CardTitle>Dados Extraídos e Estruturados</CardTitle>
+                <CardDescription>A IA analisou os documentos e estruturou os seguintes dados. Estes são os insumos prontos para a rotina de cálculo.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                  <div className="grid md:grid-cols-2 gap-4">
@@ -140,7 +140,7 @@ export default function RetirementAnalyzerPage() {
                                     <TableCell>{vinculo.endDate}</TableCell>
                                     <TableCell>
                                         <Badge variant={vinculo.type === 'especial' ? 'destructive' : 'secondary'}>
-                                            {vinculo.type === 'especial' ? 'Especial' : 'Contribuição'}
+                                            {vinculo.type === 'especial' ? 'Especial' : 'Comum'}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>{vinculo.fatorRisco || 'N/A'}</TableCell>
