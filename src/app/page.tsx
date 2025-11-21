@@ -2,8 +2,11 @@ import Image from 'next/image';
 import { Logo } from '@/components/icons';
 import { LoginForm } from '@/components/auth/login-form';
 import { AnimatedFeatureText } from '@/components/auth/animated-feature-text';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function Home() {
+  const loginImage = PlaceHolderImages.find(img => img.id === 'login-bg');
+  
   return (
     <div className="relative min-h-screen w-full lg:grid lg:grid-cols-2">
       <div className="flex items-center justify-center py-12 bg-background">
@@ -22,17 +25,20 @@ export default function Home() {
           <LoginForm />
         </div>
       </div>
-       <div className="hidden lg:flex items-center justify-center bg-muted p-10 relative">
-          <Image
-            src="/assets/logo-nelson-3.png"
-            alt="Nelson IA - Logomarca de fundo"
-            fill
-            className="object-cover"
-            sizes="50vw"
-            priority
-          />
-           <div className="relative z-10 text-white max-w-2xl w-full h-full flex flex-col justify-end">
-             <div className="bg-gradient-to-t from-black/60 via-black/30 to-transparent p-8 rounded-b-lg">
+       <div className="hidden lg:flex items-end justify-center bg-gray-900 p-10 relative">
+          {loginImage && (
+            <Image
+              src={loginImage.imageUrl}
+              alt={loginImage.description}
+              fill
+              className="object-cover opacity-30"
+              sizes="50vw"
+              priority
+              data-ai-hint={loginImage.imageHint}
+            />
+          )}
+           <div className="relative z-10 text-white max-w-2xl w-full">
+             <div className="bg-gradient-to-t from-black/50 via-black/20 to-transparent p-8 rounded-lg">
                 <AnimatedFeatureText />
               </div>
           </div>

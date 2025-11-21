@@ -1,4 +1,3 @@
-
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -20,6 +19,7 @@ import {
   LayoutDashboard,
   ShieldAlert,
   Calculator,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/icons";
@@ -39,6 +39,10 @@ const generationTools = [
     { href: "/dashboard/document-generator", label: "Gerador de Petições", icon: Gavel },
 ]
 
+const profileTools = [
+    { href: "/dashboard/profile", label: "Meu Perfil", icon: User },
+]
+
 export function AppSidebar() {
   const pathname = usePathname();
 
@@ -54,15 +58,16 @@ export function AppSidebar() {
       <SidebarMenu className="flex-1 p-2">
         {mainMenuItems.map((item) => (
           <SidebarMenuItem key={item.href}>
-            <Link href={item.href}>
               <SidebarMenuButton
+                asChild
                 isActive={pathname === item.href}
                 tooltip={item.label}
               >
-                <item.icon />
-                <span>{item.label}</span>
+                <Link href={item.href}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
               </SidebarMenuButton>
-            </Link>
           </SidebarMenuItem>
         ))}
 
@@ -72,39 +77,58 @@ export function AppSidebar() {
           <SidebarGroupLabel>Ferramentas de Análise</SidebarGroupLabel>
             {analysisTools.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href}>
                   <SidebarMenuButton
+                    asChild
                     isActive={pathname === item.href}
                     tooltip={item.label}
                   >
-                    <item.icon />
-                    <span>{item.label}</span>
+                    <Link href={item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
                   </SidebarMenuButton>
-                </Link>
               </SidebarMenuItem>
             ))}
         </SidebarGroup>
 
         <SidebarSeparator />
 
-        {generationTools.map((item) => (
-          <SidebarMenuItem key={item.href}>
-            <Link href={item.href}>
-              <SidebarMenuButton
-                isActive={pathname === item.href}
-                tooltip={item.label}
-              >
-                <item.icon />
-                <span>{item.label}</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
-        ))}
+        <SidebarGroup>
+            <SidebarGroupLabel>Geração de Documentos</SidebarGroupLabel>
+            {generationTools.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href}
+                    tooltip={item.label}
+                  >
+                    <Link href={item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+        </SidebarGroup>
 
       </SidebarMenu>
       
-      <SidebarFooter>
-        {/* Can add user info or settings here */}
+      <SidebarFooter className="p-2">
+        <SidebarSeparator className="mb-2" />
+        {profileTools.map((item) => (
+            <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                asChild
+                isActive={pathname === item.href}
+                tooltip={item.label}
+                >
+                <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        ))}
       </SidebarFooter>
     </Sidebar>
   );
