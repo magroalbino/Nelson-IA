@@ -9,6 +9,9 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarSeparator,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import {
   FileScan,
@@ -16,19 +19,25 @@ import {
   Gavel,
   LayoutDashboard,
   ShieldAlert,
-  Tractor,
+  Calculator,
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/icons";
 
-const menuItems = [
+const mainMenuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/cnis-analyzer", label: "Analisador CNIS", icon: FileScan },
-  { href: "/dashboard/pap-analyzer", label: "Analisador PAP", icon: FileText },
-  { href: "/dashboard/ppp-analyzer", label: "Analisador PPP", icon: ShieldAlert },
-  { href: "/dashboard/retirement-analyzer", label: "Aposentadoria Rural", icon: Tractor },
-  { href: "/dashboard/document-generator", label: "Gerador de Petições", icon: Gavel },
 ];
+
+const analysisTools = [
+  { href: "/dashboard/cnis-analyzer", label: "Análise de CNIS", icon: FileScan },
+  { href: "/dashboard/pap-analyzer", label: "Análise de PAP", icon: FileText },
+  { href: "/dashboard/ppp-analyzer", label: "Análise de PPP", icon: ShieldAlert },
+  { href: "/dashboard/retirement-analyzer", label: "Análise de Elegibilidade", icon: Calculator },
+];
+
+const generationTools = [
+    { href: "/dashboard/document-generator", label: "Gerador de Petições", icon: Gavel },
+]
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -36,13 +45,14 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 p-2">
+        <Link href="/dashboard" className="flex items-center gap-2 p-2" aria-label="Home">
            <Logo className="w-10 h-auto" />
            <span className="font-semibold text-lg">Nelson IA</span>
-        </div>
+        </Link>
       </SidebarHeader>
+
       <SidebarMenu className="flex-1 p-2">
-        {menuItems.map((item) => (
+        {mainMenuItems.map((item) => (
           <SidebarMenuItem key={item.href}>
             <Link href={item.href}>
               <SidebarMenuButton
@@ -55,7 +65,44 @@ export function AppSidebar() {
             </Link>
           </SidebarMenuItem>
         ))}
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Ferramentas de Análise</SidebarGroupLabel>
+            {analysisTools.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <Link href={item.href}>
+                  <SidebarMenuButton
+                    isActive={pathname === item.href}
+                    tooltip={item.label}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            ))}
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {generationTools.map((item) => (
+          <SidebarMenuItem key={item.href}>
+            <Link href={item.href}>
+              <SidebarMenuButton
+                isActive={pathname === item.href}
+                tooltip={item.label}
+              >
+                <item.icon />
+                <span>{item.label}</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+        ))}
+
       </SidebarMenu>
+      
       <SidebarFooter>
         {/* Can add user info or settings here */}
       </SidebarFooter>
