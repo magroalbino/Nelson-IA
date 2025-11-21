@@ -23,16 +23,16 @@ export default function Home() {
           <LoginForm />
         </div>
       </div>
-       <div className="hidden lg:flex items-end justify-center bg-background p-10 relative">
+       <div className="hidden lg:flex items-end justify-center bg-background relative">
           <Image
             src="/assets/logo-nelson-3.png"
             alt="Nelson IA Logo"
             fill
-            className="object-contain"
+            className="object-cover"
             sizes="50vw"
             priority
           />
-           <div className="relative z-10 text-foreground max-w-2xl w-full">
+           <div className="relative z-10 text-foreground max-w-2xl w-full p-10">
              <div className="bg-gradient-to-t from-background/80 via-background/50 to-transparent p-8 rounded-lg">
                 <AnimatedFeatureText />
               </div>
