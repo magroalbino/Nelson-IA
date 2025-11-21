@@ -203,12 +203,22 @@ export async function analyzePppAction(
 
 // Schema for Retirement Eligibility Analysis
 const retirementSchema = z.object({
-  collectedData: z.string().min(50, "Por favor, insira os dados consolidados do segurado."),
+  cnisDocumentUri: z.string().optional(),
+  papDocumentUri: z.string().optional(),
+  pppDocumentUri: z.string().optional(),
+  additionalData: z.string().optional(),
+}).refine(data => !!data.cnisDocumentUri || !!data.papDocumentUri || !!data.pppDocumentUri || !!data.additionalData, {
+  message: "Forneça pelo menos um documento ou informação adicional para análise.",
+  path: ["cnisDocumentUri"], // Arbitrarily assign error to one field for display
 });
+
 
 interface RetirementState {
   errors?: {
-    collectedData?: string[];
+    cnisDocumentUri?: string[];
+    papDocumentUri?: string[];
+    pppDocumentUri?: string[];
+    additionalData?: string[];
   };
   message?: string | null;
   data?: {
@@ -229,13 +239,16 @@ export async function analyzeRetirementAction(
   formData: FormData
 ): Promise<RetirementState> {
   const validatedFields = retirementSchema.safeParse({
-    collectedData: formData.get("collectedData"),
+    cnisDocumentUri: formData.get("cnisDocumentUri"),
+    papDocumentUri: formData.get("papDocumentUri"),
+    pppDocumentUri: formData.get("pppDocumentUri"),
+    additionalData: formData.get("additionalData"),
   });
 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Dados inválidos.",
+      message: validatedFields.error.flatten().formErrors[0] || "Dados inválidos.",
     };
   }
 
@@ -248,7 +261,7 @@ export async function analyzeRetirementAction(
   } catch (error) {
     console.error(error);
     return {
-      message: "Falha ao realizar a análise. Tente novamente.",
+      message: "Falha ao realizar a análise. Verifique os arquivos ou tente novamente.",
     };
   }
 }
