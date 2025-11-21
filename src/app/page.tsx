@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { Logo } from '@/components/icons';
 import { LoginForm } from '@/components/auth/login-form';
