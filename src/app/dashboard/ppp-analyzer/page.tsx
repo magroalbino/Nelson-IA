@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { analyzePppAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,7 +46,7 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 }
 
 export default function PppAnalyzerPage() {
-  const [state, formAction] = useFormState(analyzePppAction, initialState);
+  const [state, formAction] = useActionState(analyzePppAction, initialState);
   const [pppDocumentUri, setPppDocumentUri] = useState("");
 
   const handleFileSelect = (file: File | null, dataUri: string) => {

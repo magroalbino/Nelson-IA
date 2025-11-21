@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { analyzeCnisAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,7 +44,7 @@ function SubmitButton() {
 }
 
 export default function CnisAnalyzerPage() {
-  const [state, formAction] = useFormState(analyzeCnisAction, initialState);
+  const [state, formAction] = useActionState(analyzeCnisAction, initialState);
 
   useEffect(() => {
     if (state.message) {

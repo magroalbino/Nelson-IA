@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { analyzeRetirementAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,7 +63,7 @@ function TimeDisplay({ time }: { time: ContributionTime }) {
 
 
 export default function CalculatorPage() {
-  const [state, formAction] = useFormState(analyzeRetirementAction, initialState);
+  const [state, formAction] = useActionState(analyzeRetirementAction, initialState);
 
   const totalContributionTime = useMemo<ContributionTime | null>(() => {
     if (!state.data?.vinculos) return null;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { analyzePapAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,7 +42,7 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 }
 
 export default function PapAnalyzerPage() {
-  const [state, formAction] = useFormState(analyzePapAction, initialState);
+  const [state, formAction] = useActionState(analyzePapAction, initialState);
   const [papDataUri, setPapDataUri] = useState("");
 
   const handleFileSelect = (file: File | null, dataUri: string) => {

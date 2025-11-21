@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { generatePetitionAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,7 +49,7 @@ function SubmitButton() {
 }
 
 export default function DocumentGeneratorPage() {
-  const [state, formAction] = useFormState(generatePetitionAction, initialState);
+  const [state, formAction] = useActionState(generatePetitionAction, initialState);
 
   useEffect(() => {
     if (state.message) {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { analyzeRetirementAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,7 +46,7 @@ function SubmitButton() {
 
 
 export default function RetirementAnalyzerPage() {
-  const [state, formAction] = useFormState(analyzeRetirementAction, initialState);
+  const [state, formAction] = useActionState(analyzeRetirementAction, initialState);
 
   useEffect(() => {
     if (state.message) {
