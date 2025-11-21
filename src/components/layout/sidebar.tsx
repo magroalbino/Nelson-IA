@@ -1,3 +1,4 @@
+
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -16,6 +17,7 @@ import {
   LayoutDashboard,
   ShieldAlert,
   Tractor,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/icons";
@@ -27,6 +29,7 @@ const menuItems = [
   { href: "/dashboard/ppp-analyzer", label: "Analisador PPP", icon: ShieldAlert },
   { href: "/dashboard/retirement-analyzer", label: "Aposentadoria Rural", icon: Tractor },
   { href: "/dashboard/document-generator", label: "Gerador de Petições", icon: Gavel },
+  { href: "/dashboard/profile", label: "Meu Perfil", icon: User },
 ];
 
 export function AppSidebar() {

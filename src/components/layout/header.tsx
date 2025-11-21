@@ -17,6 +17,7 @@ import { LogOut, User, Edit } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { signOut } from "firebase/auth";
+import Link from "next/link";
 
 export function AppHeader() {
   const router = useRouter();
@@ -60,9 +61,11 @@ export function AppHeader() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-             <DropdownMenuItem>
-              <Edit className="mr-2 h-4 w-4" />
-              <span>Editar Perfil</span>
+             <DropdownMenuItem asChild>
+                <Link href="/dashboard/profile">
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Editar Perfil</span>
+                </Link>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
