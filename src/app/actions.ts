@@ -10,16 +10,22 @@ import React from "react";
 
 // Schema for Legal Petition Generation
 const petitionSchema = z.object({
-  seguradoData: z.string().min(10, "Por favor, insira os dados do segurado."),
+  seguradoData: z.string().optional(),
+  documentUri: z.string().optional(),
   tipoPetição: z.enum(["administrativo", "judicial"], {
     errorMap: () => ({ message: "Selecione um tipo de petição válido." }),
   }),
+}).refine(data => !!data.seguradoData || !!data.documentUri, {
+    message: "Forneça os dados do segurado no campo de texto ou anexe um documento.",
+    path: ["seguradoData"], // Assign error to one field for display
 });
+
 
 interface PetitionState {
   errors?: {
     seguradoData?: string[];
     tipoPetição?: string[];
+    documentUri?: string[];
   };
   message?: string | null;
   data?: {
@@ -34,13 +40,14 @@ export async function generatePetitionAction(
 ): Promise<PetitionState> {
   const validatedFields = petitionSchema.safeParse({
     seguradoData: formData.get("seguradoData"),
+    documentUri: formData.get("documentUri"),
     tipoPetição: formData.get("tipoPetição"),
   });
 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Dados inválidos.",
+      message: validatedFields.error.flatten().formErrors.join(', ') || "Dados inválidos.",
     };
   }
 

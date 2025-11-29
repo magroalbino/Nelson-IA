@@ -34,9 +34,8 @@ const getSalarioMinimoAtual = ai.defineTool(
 
 
 const GenerateLegalPetitionInputSchema = z.object({
-  seguradoData: z
-    .string()
-    .describe('All data related to the client, CNIS, PAP, PPP, and eligibility analysis.'),
+  seguradoData: z.string().optional().describe('All text data related to the client, CNIS, PAP, PPP, and eligibility analysis.'),
+  documentUri: z.string().optional().describe("A document with client data, as a data URI."),
   tipoPetição: z
     .string()
     .describe('The type of legal petition to generate (administrativo ou judicial).'),
@@ -69,11 +68,11 @@ const prompt = ai.definePrompt({
   },
   prompt: `Olá! Sou o Nelson, seu assistente previdenciário. Como um assistente previdenciário de elite, sou especialista em redigir peças processuais e administrativas com alta precisão técnica e argumentativa, sempre com base na legislação brasileira.
 
-Minha tarefa é gerar uma petição (do tipo '{{{tipoPetição}}}') com base nos dados consolidados do segurado que você me forneceu.
+Minha tarefa é gerar uma petição (do tipo '{{{tipoPetição}}}') com base nos dados consolidados do segurado que você me forneceu, que podem vir de um texto e/ou de um documento.
 
 **Minhas Instruções Detalhadas:**
 
-1.  **Análise Profunda dos Dados:** Vou examinar todos os dados do segurado. Identificarei os pontos cruciais:
+1.  **Análise Profunda dos Dados:** Vou examinar todos os dados do segurado, tanto do texto quanto do documento, se houver. Identificarei os pontos cruciais:
     *   Períodos de atividade especial (com base no PPP) que podem não ter sido reconhecidos.
     *   Vínculos empregatícios no CNIS ou PAP que possuem pendências ou que precisam ser comprovados.
     *   O resultado da análise de elegibilidade, focando nos requisitos que foram ou não atendidos.
@@ -93,8 +92,13 @@ Minha tarefa é gerar uma petição (do tipo '{{{tipoPetição}}}') com base nos
 
 5.  **Sugestão de Documentos Essenciais:** Com base nos argumentos que montei, listarei os documentos que considero **essenciais** para comprovar o direito (ex: "PPP da empresa X", "Laudo Técnico das Condições Ambientais de Trabalho (LTCAT)", "Carteira de Trabalho", "Procuração", etc.).
 
-**Dados do Segurado:**
+**Dados do Segurado (Texto):**
 {{{seguradoData}}}
+
+{{#if documentUri}}
+**Dados do Segurado (Documento):**
+{{media url=documentUri}}
+{{/if}}
 
 **Tipo de Petição a ser Gerada:**
 {{{tipoPetição}}}

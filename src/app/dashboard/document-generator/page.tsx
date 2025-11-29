@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { generatePetitionAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Gavel, Loader2, ServerCrash, FileText, Paperclip } from "lucide-react";
-import { useEffect } from "react";
+import { Gavel, Loader2, ServerCrash, FileText, Paperclip, UploadCloud } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { FileUploadCard } from "@/components/file-upload-card";
 
 const initialState = {
   message: null,
@@ -42,7 +42,10 @@ function SubmitButton() {
           Gerando...
         </>
       ) : (
-        "Gerar Petição"
+        <>
+          <Gavel className="mr-2 h-4 w-4" />
+          Gerar Petição
+        </>
       )}
     </Button>
   );
@@ -50,6 +53,7 @@ function SubmitButton() {
 
 export default function DocumentGeneratorPage() {
   const [state, formAction] = useActionState(generatePetitionAction, initialState);
+  const [documentUri, setDocumentUri] = useState("");
 
   useEffect(() => {
     if (state.message) {
@@ -68,25 +72,41 @@ export default function DocumentGeneratorPage() {
           <CardHeader>
             <CardTitle>Gerador de Petições e Peças Processuais</CardTitle>
             <CardDescription>
-              Insira os dados do segurado e selecione o tipo de petição para
+              Insira os dados do segurado (colando o texto ou anexando um documento) e selecione o tipo de petição para
               gerar o documento automaticamente.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="seguradoData">
-                Dados do Segurado (CNIS, PAP, PPP, etc.)
-              </Label>
-              <Textarea
-                id="seguradoData"
-                name="seguradoData"
-                placeholder="Cole todos os dados relevantes do segurado aqui..."
-                className="min-h-[200px]"
-              />
-              {state.errors?.seguradoData && (
-                <p className="text-sm text-destructive">{state.errors.seguradoData[0]}</p>
-              )}
+          <CardContent className="space-y-6">
+            <input type="hidden" name="documentUri" value={documentUri} />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <div className="space-y-2">
+                    <Label htmlFor="seguradoData">
+                        Dados do Segurado (texto)
+                    </Label>
+                    <Textarea
+                        id="seguradoData"
+                        name="seguradoData"
+                        placeholder="Cole todos os dados relevantes do segurado aqui..."
+                        className="min-h-[200px]"
+                    />
+                </div>
+                 <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                        <UploadCloud className="w-4 h-4" /> 
+                        Anexar Documento (PDF)
+                    </Label>
+                    <FileUploadCard 
+                        onFileSelect={(_, dataUri) => setDocumentUri(dataUri)} 
+                        acceptedFileTypes={["application/pdf"]} 
+                    />
+                </div>
             </div>
+
+            {state.errors?.seguradoData && (
+                <p className="text-sm text-destructive">{state.errors.seguradoData[0]}</p>
+            )}
+            
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Label htmlFor="tipoPetição">Tipo de Petição</Label>
               <Select name="tipoPetição">
