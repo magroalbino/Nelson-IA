@@ -21,10 +21,14 @@ const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
 
+// Forçar a definição do authDomain no objeto auth pode resolver problemas de redirecionamento.
+auth.tenantId = null;
+auth.languageCode = 'pt';
+auth.settings.authDomain = firebaseConfig.authDomain;
+
 const googleProvider: GoogleAuthProvider = new GoogleAuthProvider();
-// Forçar a definição do authDomain pode resolver problemas de redirecionamento.
 googleProvider.setCustomParameters({
-  authDomain: firebaseConfig.authDomain
+  prompt: 'select_account'
 });
 
 
