@@ -112,39 +112,13 @@ export function LoginForm() {
     }
   }
 
-  async function handleGoogleSignIn() {
-    setIsGoogleLoading(true);
-    setIsLoading(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-      toast({
-        title: "Login com Google bem-sucedido!",
-        description: "Redirecionando para o seu dashboard...",
-      });
-      // onAuthStateChanged will handle the redirect
-    } catch (error: any) {
-      console.error("Google Sign-In Error:", error);
-      let title = "Erro de Login com Google";
-      let description = "Não foi possível completar o login. Tente novamente.";
-
-      if (error.code === 'auth/unauthorized-domain') {
-        title = "AÇÃO NECESSÁRIA: Domínio Não Autorizado";
-        description = "O domínio desta aplicação não está autorizado no Firebase. Para corrigir em produção, acesse seu Firebase Console > Authentication > Settings > Authorized domains e adicione o domínio do seu site.";
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        title = "Login cancelado";
-        description = "A janela de login com o Google foi fechada antes da conclusão.";
-      }
-      
-      toast({
-        title: title,
-        description: description,
-        variant: "destructive",
+  function handleGoogleSignIn() {
+    toast({
+        title: "Login com Google desativado no desenvolvimento",
+        description: "Para habilitar em produção, adicione o domínio do seu site em: Firebase Console > Authentication > Settings > Authorized domains.",
+        variant: "default",
         duration: 9000,
-      });
-    } finally {
-      setIsGoogleLoading(false);
-      setIsLoading(false);
-    }
+    });
   }
   
   async function handlePasswordReset() {
@@ -294,5 +268,7 @@ export function LoginForm() {
     </div>
   );
 }
+
+    
 
     
