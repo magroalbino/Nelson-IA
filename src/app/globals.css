@@ -10,19 +10,19 @@
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-    --primary: 217 91.2% 59.8%;
+    --primary: 216 91% 54%; /* Um azul mais sóbrio */
     --primary-foreground: 210 20% 98%;
     --secondary: 220 14.3% 95.9%;
     --secondary-foreground: 220.9 39.3% 11%;
     --muted: 220 14.3% 95.9%;
     --muted-foreground: 220 8.9% 46.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220.9 39.3% 11%;
+    --accent: 38 92% 50%; /* Dourado/Âmbar para destaque */
+    --accent-foreground: 48 96% 6%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 224 71.4% 4.1%;
+    --ring: 216 91% 54%;
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 100%;
@@ -30,40 +30,40 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-accent: 220 14.3% 95.9%;
     --sidebar-accent-foreground: 220.9 39.3% 11%;
-    --sidebar-primary: 217 91.2% 59.8%;
+    --sidebar-primary: 216 91% 54%;
     --sidebar-primary-foreground: 210 20% 98%;
-    --sidebar-ring: 224 71.4% 4.1%;
+    --sidebar-ring: 216 91% 54%;
   }
 
   .dark {
-    --background: 224 71.4% 4.1%;
+    --background: 222 47% 11%; /* Azul escuro profundo */
     --foreground: 210 40% 98%;
-    --card: 224 71.4% 6.1%;
+    --card: 222 47% 14%;
     --card-foreground: 210 40% 98%;
-    --popover: 224 71.4% 4.1%;
+    --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217 91.2% 59.8%;
+    --primary: 216 91% 54%;
     --primary-foreground: 210 20% 98%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 40.6%;
+    --muted: 217 33% 20%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 48 96% 6%;
+    --destructive: 0 63% 41%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 217 91.2% 59.8%;
+    --border: 217 33% 25%;
+    --input: 217 33% 22%;
+    --ring: 216 91% 54%;
 
-    --sidebar-background: 224 71.4% 5.1%;
+    --sidebar-background: 222 47% 10%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 12.5%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-border: 217 33% 20%;
+    --sidebar-accent: 217 33% 17%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91.2% 59.8%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-ring: 217 91.2% 59.8%;
+    --sidebar-primary: 38 92% 50%; /* Dourado como primário na sidebar */
+    --sidebar-primary-foreground: 48 96% 6%;
+    --sidebar-ring: 38 92% 50%;
   }
 }
 
@@ -81,16 +81,17 @@
 @layer components {
   /* Custom styles for the active menu item indicator */
   [data-sidebar="menu-button"]:hover {
-    @apply bg-transparent;
+    @apply bg-sidebar-accent text-sidebar-accent-foreground;
   }
   
   [data-sidebar="menu-button"][data-active="true"] {
-    @apply bg-transparent text-primary;
+    @apply bg-sidebar-accent text-sidebar-primary-foreground font-semibold;
+    color: hsl(var(--sidebar-primary));
   }
 
   [data-sidebar="menu-button"][data-active="true"]::before {
     content: '';
-    @apply absolute -left-1 top-1/2 h-6 w-1 -translate-y-1/2 scale-y-100 rounded-full bg-primary transition-transform;
+    @apply absolute -left-0.5 top-1/2 h-6 w-1 -translate-y-1/2 scale-y-100 rounded-full bg-sidebar-primary transition-transform;
   }
   
   .group-data-\[collapsible\=icon\]\:hidden [data-sidebar="menu-button"][data-active="true"]::before {
@@ -98,6 +99,6 @@
   }
 
   .group-data-\[collapsible\=icon\] [data-sidebar="menu-button"][data-active="true"]::before {
-     @apply absolute left-1/2 top-auto bottom-0 h-1 w-4 -translate-x-1/2 scale-x-100 rounded-full bg-primary transition-transform;
+     @apply absolute left-1/2 top-auto bottom-0 h-1 w-4 -translate-x-1/2 scale-x-100 rounded-full bg-sidebar-primary transition-transform;
   }
 }
