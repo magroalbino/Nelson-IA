@@ -29,7 +29,6 @@ auth.settings.authDomain = firebaseConfig.authDomain;
 const googleProvider: GoogleAuthProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account',
-  auth_domain: firebaseConfig.authDomain,
 });
 
 
