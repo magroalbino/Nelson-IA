@@ -21,11 +21,6 @@ const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
 
-// Explicitly set the authDomain to fix redirect issues in specific environments.
-auth.tenantId = null;
-auth.languageCode = 'pt';
-auth.settings.authDomain = firebaseConfig.authDomain;
-
 const googleProvider: GoogleAuthProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account',
@@ -33,3 +28,5 @@ googleProvider.setCustomParameters({
 
 
 export { app, auth, db, storage, googleProvider };
+
+    

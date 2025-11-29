@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { ArrowRight, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithRedirect, getRedirectResult, User as FirebaseUser } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithPopup, User as FirebaseUser } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
 
@@ -45,53 +44,19 @@ const formSchema = z.object({
 export function LoginForm() {
   const router = useRouter();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Start as true to handle redirect
+  const [isLoading, setIsLoading] = useState(true);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [user, setUser] = useState<FirebaseUser | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setIsLoading(false); // Stop loading once auth state is confirmed
       setUser(currentUser);
       if (currentUser) {
         router.push('/dashboard');
+      } else {
+        setIsLoading(false);
       }
     });
-
-    // Handle the redirect result from Google sign-in
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          // This means the user has just signed in via redirect.
-          // onAuthStateChanged will handle the rest.
-          toast({
-            title: "Login com Google bem-sucedido!",
-            description: "Redirecionando para o seu dashboard...",
-          });
-        }
-      })
-      .catch((error) => {
-        console.error("Google Redirect Result Error:", error);
-        let title = "Erro de Login com Google";
-        let description = "Não foi possível completar o login após o redirecionamento.";
-        if (error.code === 'auth/unauthorized-domain') {
-          title = "AÇÃO NECESSÁRIA: Domínio Não Autorizado";
-          description = "O domínio da sua aplicação não está autorizado no Firebase. Para corrigir, acesse seu Firebase Console > Authentication > Settings > Authorized domains e adicione o domínio. Este passo é crucial para a segurança.";
-        }
-        toast({
-          title: title,
-          description: description,
-          variant: "destructive",
-          duration: 9000,
-        });
-      }).finally(() => {
-        // Even if there's no result, we're done with the redirect check.
-        // Let onAuthStateChanged determine the final loading state.
-        if (!auth.currentUser) {
-            setIsLoading(false);
-        }
-      });
-
 
     return () => unsubscribe();
   }, [router]);
@@ -149,9 +114,37 @@ export function LoginForm() {
 
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
-    setIsLoading(true); // Indicate that a process has started
-    await signInWithRedirect(auth, googleProvider);
-    // The page will redirect, and the result will be handled by getRedirectResult on page load.
+    setIsLoading(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      toast({
+        title: "Login com Google bem-sucedido!",
+        description: "Redirecionando para o seu dashboard...",
+      });
+      // onAuthStateChanged will handle the redirect
+    } catch (error: any) {
+      console.error("Google Sign-In Error:", error);
+      let title = "Erro de Login com Google";
+      let description = "Não foi possível completar o login. Tente novamente.";
+
+      if (error.code === 'auth/unauthorized-domain') {
+        title = "AÇÃO NECESSÁRIA: Domínio Não Autorizado";
+        description = "O domínio desta aplicação não está autorizado no Firebase. Para corrigir em produção, acesse seu Firebase Console > Authentication > Settings > Authorized domains e adicione o domínio do seu site.";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        title = "Login cancelado";
+        description = "A janela de login com o Google foi fechada antes da conclusão.";
+      }
+      
+      toast({
+        title: title,
+        description: description,
+        variant: "destructive",
+        duration: 9000,
+      });
+    } finally {
+      setIsGoogleLoading(false);
+      setIsLoading(false);
+    }
   }
   
   async function handlePasswordReset() {
@@ -193,7 +186,7 @@ export function LoginForm() {
 
   const anyLoading = isLoading || isGoogleLoading;
 
-  if (anyLoading && !user) {
+  if (isLoading && !user) {
     return (
         <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -301,3 +294,5 @@ export function LoginForm() {
     </div>
   );
 }
+
+    
