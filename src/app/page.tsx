@@ -23,7 +23,7 @@ export default function Home() {
           <LoginForm />
         </div>
       </div>
-       <div className="hidden lg:flex items-end justify-center bg-background relative">
+       <div className="hidden lg:flex items-center justify-center bg-background relative">
           <Image
             src="/assets/logo-nelson-3.png"
             alt="Nelson IA Logo"
