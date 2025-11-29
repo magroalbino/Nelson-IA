@@ -70,7 +70,7 @@ export default function DashboardPage() {
         <h1 className="text-4xl font-bold tracking-tight font-heading">
           Bem-vindo ao Nelson IA
         </h1>
-        <p className="text-lg text-muted-foreground max-w-3xl">
+        <p className="text-lg text-muted-foreground text-justify">
           Sua plataforma inteligente para direito previdenciário. Comece selecionando uma de nossas ferramentas de análise abaixo.
         </p>
       </header>
