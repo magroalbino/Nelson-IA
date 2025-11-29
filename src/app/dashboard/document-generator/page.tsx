@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
@@ -79,29 +80,43 @@ export default function DocumentGeneratorPage() {
           <CardContent className="space-y-6">
             <input type="hidden" name="documentUri" value={documentUri} />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                <div className="space-y-2">
-                    <Label htmlFor="seguradoData">
-                        Dados do Segurado (texto)
-                    </Label>
-                    <Textarea
-                        id="seguradoData"
-                        name="seguradoData"
-                        placeholder="Cole todos os dados relevantes do segurado aqui..."
-                        className="min-h-[200px]"
-                    />
-                </div>
-                 <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                        <UploadCloud className="w-4 h-4" /> 
-                        Anexar Documento (PDF)
-                    </Label>
-                    <FileUploadCard 
-                        onFileSelect={(_, dataUri) => setDocumentUri(dataUri)} 
-                        acceptedFileTypes={["application/pdf"]} 
-                    />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="seguradoData">
+                Dados do Segurado (texto)
+              </Label>
+              <Textarea
+                id="seguradoData"
+                name="seguradoData"
+                placeholder="Cole todos os dados relevantes do segurado aqui..."
+                className="min-h-[200px]"
+              />
             </div>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Ou
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                    <UploadCloud className="w-4 h-4" /> 
+                    Anexar Documento (PDF)
+                </Label>
+                 <p className="text-sm text-muted-foreground">
+                    Se preferir, anexe um documento em PDF como alternativa a escrever os dados para gerar a petição.
+                </p>
+                <FileUploadCard 
+                    onFileSelect={(_, dataUri) => setDocumentUri(dataUri)} 
+                    acceptedFileTypes={["application/pdf"]} 
+                />
+            </div>
+            
 
             {state.errors?.seguradoData && (
                 <p className="text-sm text-destructive">{state.errors.seguradoData[0]}</p>
