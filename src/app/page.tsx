@@ -6,7 +6,7 @@ import { AnimatedFeatureText } from '@/components/auth/animated-feature-text';
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen w-full lg:grid lg:grid-cols-2">
+    <div className="fixed inset-0 w-full lg:grid lg:grid-cols-2">
       <div className="flex items-center justify-center py-12 bg-background">
         <div className="mx-auto grid w-[380px] gap-8 p-4">
            <div className="flex flex-col items-center text-center gap-4 mb-4">
