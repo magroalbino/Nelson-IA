@@ -5,6 +5,8 @@ import { LoginForm } from '@/components/auth/login-form';
 import { AnimatedFeatureText } from '@/components/auth/animated-feature-text';
 
 export default function Home() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <div className="fixed inset-0 w-full lg:grid lg:grid-cols-2">
       <div className="flex items-center justify-center py-12 bg-background">
@@ -36,6 +38,11 @@ export default function Home() {
              <div className="bg-gradient-to-t from-background/80 via-background/50 to-transparent p-8 rounded-lg">
                 <AnimatedFeatureText />
               </div>
+          </div>
+          <div className="absolute bottom-4 right-4 z-10 p-4 text-right">
+            <p className="text-xs text-white/70">
+              © {currentYear} Nelson IA. Todos os direitos reservados.
+            </p>
           </div>
       </div>
     </div>
