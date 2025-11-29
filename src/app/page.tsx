@@ -3,11 +3,9 @@ import Image from 'next/image';
 import { Logo } from '@/components/icons';
 import { LoginForm } from '@/components/auth/login-form';
 import { AnimatedFeatureText } from '@/components/auth/animated-feature-text';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function Home() {
   const currentYear = new Date().getFullYear();
-  const loginBgImage = PlaceHolderImages.find(img => img.id === 'login-bg');
 
   return (
     <div className="fixed inset-0 w-full lg:grid lg:grid-cols-2">
@@ -28,17 +26,14 @@ export default function Home() {
         </div>
       </div>
        <div className="hidden lg:flex items-end justify-center bg-background relative pb-20">
-          {loginBgImage && (
-            <Image
-              src={loginBgImage.imageUrl}
-              alt={loginBgImage.description}
-              fill
-              className="object-cover"
-              sizes="50vw"
-              priority
-              data-ai-hint={loginBgImage.imageHint}
-            />
-          )}
+          <Image
+            src="/logo-nelson-3.png"
+            alt="Nelson IA Background"
+            fill
+            className="object-cover"
+            sizes="50vw"
+            priority
+          />
            <div className="relative z-10 text-foreground max-w-2xl w-full p-10">
              <div className="bg-gradient-to-t from-background/80 via-background/50 to-transparent p-8 rounded-lg">
                 <AnimatedFeatureText />
