@@ -38,7 +38,8 @@ const analysisTools = [
 ];
 
 const calculationTools = [
-    { href: "/dashboard/calculator", label: "Calculadora", icon: Calculator },
+    { href: "/dashboard/calculator", label: "Calculadora de Tempo", icon: Calculator },
+    { href: "/dashboard/rmi-calculator", label: "Calculadora de RMI", icon: Calculator },
 ];
 
 const generationTools = [

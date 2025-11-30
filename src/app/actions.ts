@@ -6,6 +6,7 @@ import { analyzeCnisPendencies } from "@/ai/flows/analyze-cnis-pendencies";
 import { extractPapData } from "@/ai/flows/extract-pap-data";
 import { analyzePppDocument } from "@/ai/flows/analyze-ppp-document";
 import { analyzeRetirementEligibility } from "@/ai/flows/analyze-retirement-eligibility";
+import { calculateRmi } from "@/ai/flows/calculate-rmi-flow";
 import React from "react";
 
 // Schema for Legal Petition Generation
@@ -271,4 +272,66 @@ export async function analyzeRetirementAction(
       message: "Falha ao realizar a análise. Verifique os arquivos ou tente novamente.",
     };
   }
+}
+
+
+// Schema for RMI Calculation
+const rmiSchema = z.object({
+  cnisDocumentUri: z.string().min(1, 'O upload do documento CNIS é obrigatório.'),
+  birthDate: z.string().min(10, 'A data de nascimento é obrigatória.'),
+  gender: z.enum(['male', 'female'], {
+    errorMap: () => ({ message: "Selecione o gênero." }),
+  })
+});
+
+interface RmiState {
+    errors?: { 
+      cnisDocumentUri?: string[];
+      birthDate?: string[],
+      gender?: string[]
+    };
+    message?: string | null;
+    data?: {
+      contributions: {
+        competence: string;
+        salary: number;
+      }[];
+      averageSalary: number;
+      contributionTime: string;
+      rmiValue: number;
+      calculationFactors: {
+        divisor: number;
+        contributionFactor: number;
+        calculationFormula: string;
+      };
+      summary: string;
+    } | null;
+}
+
+export async function calculateRmiAction(prevState: RmiState, formData: FormData): Promise<RmiState> {
+    const validatedFields = rmiSchema.safeParse({
+        cnisDocumentUri: formData.get("cnisDocumentUri"),
+        birthDate: formData.get("birthDate"),
+        gender: formData.get("gender"),
+    });
+
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'Dados inválidos.',
+        };
+    }
+
+    try {
+        const result = await calculateRmi(validatedFields.data);
+        return {
+            message: 'Cálculo de RMI concluído!',
+            data: result,
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            message: 'Falha ao calcular a RMI. O documento CNIS pode estar ilegível ou em formato inesperado.',
+        };
+    }
 }

@@ -38,6 +38,12 @@ const featuredTools = [
 
 const quickAccessTools = [
   {
+    title: "Calculadora de RMI",
+    description: "Estime o valor da Renda Mensal Inicial a partir do CNIS.",
+    href: "/dashboard/rmi-calculator",
+    icon: <Calculator className="w-5 h-5 text-muted-foreground" />,
+  },
+  {
     title: "Analisador de PPP",
     description: "Extraia dados de agentes nocivos do Perfil Profissiográfico.",
     href: "/dashboard/ppp-analyzer",
