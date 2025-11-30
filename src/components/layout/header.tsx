@@ -20,6 +20,7 @@ import Link from "next/link";
 import { Skeleton } from "../ui/skeleton";
 import { ThemeToggle } from "../theme-toggle";
 import { Logo } from "../icons";
+import { Badge } from "../ui/badge";
 
 export function AppHeader() {
   const router = useRouter();
@@ -40,7 +41,10 @@ export function AppHeader() {
         <SidebarTrigger className="md:hidden"/>
         <Link href="/dashboard" className="hidden items-center gap-2 font-semibold md:flex" aria-label="Home">
             <Logo className="w-8 h-auto" />
-            <span className="text-lg font-bold">Nelson IA</span>
+            <div className="flex items-center gap-2">
+                <span className="text-lg font-bold">Nelson IA</span>
+                <Badge variant="secondary" className="text-xs">Fase de Testes</Badge>
+            </div>
         </Link>
       </div>
 
