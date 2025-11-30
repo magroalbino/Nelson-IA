@@ -28,7 +28,7 @@ const ContributionSchema = z.object({
 });
 
 const CalculationFactorsSchema = z.object({
-    d divisor: z.number().describe("The divisor used for the average calculation (number of months)."),
+    divisor: z.number().describe("The divisor used for the average calculation (number of months)."),
     contributionFactor: z.number().describe("The social security factor applied, if applicable."),
     calculationFormula: z.string().describe("The formula used to calculate the RMI (e.g., '60% of average + 2% per year over 20 years').")
 });
