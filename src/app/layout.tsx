@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: 'Nelson IA – Seu Assistente Previdenciário',
   description: 'Análise de documentos, geração de petições e planejamento previdenciário com IA.',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/assets/favicon.ico',
   },
 };
 
@@ -31,9 +31,7 @@ export default function RootLayout({
 
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-      </head>
+      <head />
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',
