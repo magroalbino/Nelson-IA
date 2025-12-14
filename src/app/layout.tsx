@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico?v=1" sizes="any" />
+        <link rel="icon" href="/favicon.ico?v=1" />
       </head>
       <body
         className={cn(
