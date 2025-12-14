@@ -8,9 +8,6 @@ import { ThemeProvider } from '@/components/theme-provider';
 export const metadata: Metadata = {
   title: 'Nelson IA – Seu Assistente Previdenciário',
   description: 'Análise de documentos, geração de petições e planejamento previdenciário com IA.',
-  icons: {
-    icon: '/assets/favicon.ico',
-  },
 };
 
 const fontSans = Inter({
