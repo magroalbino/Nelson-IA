@@ -46,7 +46,7 @@
     "framer-motion": "^11.2.10",
     "genkit": "^1.19.1",
     "lucide-react": "^0.475.0",
-    "next": "15.3.8",
+    "next": "15.6.0-canary.58",
     "next-themes": "^0.3.0",
     "patch-package": "^8.0.0",
     "react": "^18.3.1",
