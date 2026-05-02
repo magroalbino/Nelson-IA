@@ -76,13 +76,19 @@ interface CnisState {
     errors?: { cnisDocumentUri?: string[] };
     message?: string | null;
     data?: {
+      qualityScore: number;
+      riskLevel: 'baixo' | 'médio' | 'alto';
+      contributionStatus: string;
       pendencies: {
         indicator: string;
         description: string;
         recommendedAction: string;
         relatedPeriods: string[];
+        severity: 'baixa' | 'média' | 'alta';
       }[];
       summary: string;
+      recommendations: string[];
+      nextSteps: string[];
     } | null;
 }
 
@@ -121,13 +127,24 @@ interface PapState {
     errors?: { papDataUri?: string[] };
     message?: string | null;
     data?: {
+        totalPeriods: string;
+        totalEmployers: number;
+        averageSalary: string;
+        qualityIndicators: string;
+        strategicSummary: string;
+        alerts: {
+            type: 'info' | 'warning' | 'error';
+            message: string;
+        }[];
         vínculos: {
             empregador: string;
             funcao: string;
             dataInicio: string;
             dataFim: string;
             salario: string;
+            duration: string;
         }[];
+        recommendations: string[];
     } | null;
 }
 
@@ -169,6 +186,17 @@ interface PppState {
     nomeTrabalhador: string;
     empregador: string;
     resumoGeral: string;
+    elegibilidadeEspecial: {
+      isElegivel: boolean;
+      agentesNocivos: string[];
+      tempoEspecialEstimado: string;
+      percentualConversao: number;
+    };
+    riskAssessment: {
+      riskLevel: string;
+      mainHazards: string[];
+      protectionEffectiveness: number;
+    };
     registrosExposicao: {
       periodo: string;
       fatorDeRisco: string;
@@ -177,6 +205,7 @@ interface PppState {
       epcEficaz: string;
       epiEficaz: string;
     }[];
+    recommendations: string[];
   } | null;
 }
 
@@ -299,12 +328,25 @@ interface RmiState {
       averageSalary: number;
       contributionTime: string;
       rmiValue: number;
+      retirementEligibility: {
+        isEligible: boolean;
+        retirementType: string;
+        yearsUntilRetirement: number;
+        missingRequirements: string[];
+      };
+      scenarios: {
+        name: string;
+        description: string;
+        estimatedRmi: number;
+        yearsToRetirement: number;
+      }[];
       calculationFactors: {
         divisor: number;
         contributionFactor: number;
         calculationFormula: string;
       };
       summary: string;
+      recommendations: string[];
     } | null;
 }
 

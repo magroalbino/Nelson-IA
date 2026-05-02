@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview A PAP data extraction AI agent.
+ * @fileOverview A PAP data extraction AI agent with strategic analysis.
  *
  * - extractPapData - A function that handles the PAP data extraction process.
  * - ExtractPapDataInput - The input type for the extractPapData function.
@@ -21,6 +21,15 @@ const ExtractPapDataInputSchema = z.object({
 export type ExtractPapDataInput = z.infer<typeof ExtractPapDataInputSchema>;
 
 const ExtractPapDataOutputSchema = z.object({
+  totalPeriods: z.string().describe('Total contribution period in the format "X years, Y months, Z days".'),
+  totalEmployers: z.number().describe('Total number of distinct employers.'),
+  averageSalary: z.string().describe('Average salary across all employment periods.'),
+  qualityIndicators: z.string().describe('Assessment of data quality and consistency in the PAP.'),
+  strategicSummary: z.string().describe('A strategic summary of the employment history, highlighting key periods, salary progression, and any notable gaps or inconsistencies.'),
+  alerts: z.array(z.object({
+    type: z.enum(['info', 'warning', 'error']).describe('Alert type.'),
+    message: z.string().describe('Alert message.')
+  })).describe('A list of alerts or observations about the employment record.'),
   vínculos: z
     .array(
       z.object({
@@ -29,9 +38,11 @@ const ExtractPapDataOutputSchema = z.object({
         dataInicio: z.string().describe('The start date of the employment.'),
         dataFim: z.string().describe('The end date of the employment.'),
         salario: z.string().describe('The salary for the role.'),
+        duration: z.string().describe('Duration of employment in the format "X years, Y months, Z days".')
       })
     )
     .describe('A list of employment records extracted from the PAP document.'),
+  recommendations: z.array(z.string()).describe('A list of recommendations based on the employment history analysis.')
 });
 export type ExtractPapDataOutput = z.infer<typeof ExtractPapDataOutputSchema>;
 
@@ -43,39 +54,20 @@ const prompt = ai.definePrompt({
   name: 'extractPapDataPrompt',
   input: {schema: ExtractPapDataInputSchema},
   output: {schema: ExtractPapDataOutputSchema},
-  prompt: `Olá! Sou o Nelson, seu assistente previdenciário. Como um especialista em análise de documentos, minha tarefa é extrair o histórico de vínculos de documentos PAP (Perfil de Atividade Profissional). Vou extrair todos os registros de emprego, incluindo empregador, função, data de início, data de término e salário.
+  prompt: `Olá! Sou o Nelson, seu assistente previdenciário. Como um especialista em análise de documentos, minha tarefa é extrair e analisar o histórico de vínculos de documentos PAP (Perfil de Atividade Profissional). Vou extrair todos os registros de emprego, calcular períodos, identificar padrões e fornecer uma análise estratégica.
 
 Vamos analisar os dados do documento PAP que você enviou: {{media url=papDataUri}}
 
-Vou organizar os dados para você em um objeto JSON com uma única chave chamada "vínculos". O valor será um array de objetos, onde cada objeto representa um vínculo empregatício com as seguintes chaves:
+Minha análise incluirá:
 
-- empregador: O nome do empregador.
-- funcao: O cargo ou função.
-- dataInicio: A data de início do vínculo.
-- dataFim: A data de término do vínculo.
-- salario: O salário para o cargo.
+1. **Extração de Vínculos**: Todos os registros de emprego com empregador, função, datas e salário.
+2. **Cálculos**: Período total de contribuição, número de empregadores, salário médio.
+3. **Análise de Qualidade**: Avaliação da consistência e qualidade dos dados.
+4. **Resumo Estratégico**: Uma visão geral do histórico profissional, progressão salarial, lacunas e inconsistências.
+5. **Alertas**: Identificação de possíveis problemas ou pontos de atenção (ex: períodos sem registro, salários inconsistentes, lacunas temporais).
+6. **Recomendações**: Sugestões práticas baseadas na análise (ex: documentos faltantes, períodos a regularizar).
 
-Farei o meu melhor para garantir que o resultado seja um JSON válido e preciso.
-
-Exemplo do formato da saída:
-{
-  "vínculos": [
-    {
-      "empregador": "Example Employer 1",
-      "funcao": "Example Role 1",
-      "dataInicio": "2020-01-01",
-      "dataFim": "2021-01-01",
-      "salario": "1000"
-    },
-    {
-      "empregador": "Example Employer 2",
-      "funcao": "Example Role 2",
-      "dataInicio": "2021-01-01",
-      "dataFim": "2022-01-01",
-      "salario": "2000"
-    }
-  ]
-}`,
+Vou organizar os dados em um JSON estruturado e preciso.`,
 });
 
 const extractPapDataFlow = ai.defineFlow(

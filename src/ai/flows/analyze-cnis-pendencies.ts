@@ -24,12 +24,18 @@ const PendencySchema = z.object({
     indicator: z.string().describe("The acronym or indicator of the pendency (e.g., 'PEXT', 'AEXT-VI')."),
     description: z.string().describe("A clear and objective explanation of what the pendency means for the client's retirement, according to INSS norms."),
     recommendedAction: z.string().describe("The recommended action or necessary documentation to resolve the issue, based on official procedures."),
-    relatedPeriods: z.array(z.string()).describe("The contribution periods (e.g., '01/01/2020 - 31/12/2020') associated with this pendency.")
+    relatedPeriods: z.array(z.string()).describe("The contribution periods (e.g., '01/01/2020 - 31/12/2020') associated with this pendency."),
+    severity: z.enum(['baixa', 'media', 'alta']).describe("The severity level of this pendency: 'baixa' (low), 'media' (medium), or 'alta' (high).")
 });
 
 const AnalyzeCnisPendenciesOutputSchema = z.object({
+    qualityScore: z.number().min(0).max(100).describe("A quality score from 0 to 100 representing the overall quality of the CNIS record."),
+    riskLevel: z.enum(['baixo', 'medio', 'alto']).describe("Overall risk level assessment: 'baixo' (low), 'medio' (medium), or 'alto' (high)."),
+    contributionStatus: z.string().describe("A brief status description of the contribution record (e.g., 'Regular', 'Com pendências', 'Crítico')."),
     pendencies: z.array(PendencySchema).describe("A list of all identified pendencies in the CNIS document."),
-    summary: z.string().describe("A strategic summary about the identified pendencies, the overall quality of the contributions, and whether it's advisable to continue contributing to improve the retirement benefit. It should also mention the possibility of retroactive payments for specific periods if any are identified.")
+    summary: z.string().describe("A strategic summary about the identified pendencies, the overall quality of the contributions, and whether it's advisable to continue contributing to improve the retirement benefit. It should also mention the possibility of retroactive payments for specific periods if any are identified."),
+    recommendations: z.array(z.string()).describe("A list of 3-5 practical recommendations for the insured person to improve their retirement prospects."),
+    nextSteps: z.array(z.string()).describe("A list of immediate next steps the insured person should take to resolve identified issues.")
 });
 export type AnalyzeCnisPendenciesOutput = z.infer<typeof AnalyzeCnisPendenciesOutputSchema>;
 
@@ -48,21 +54,31 @@ Vamos analisar juntos o documento CNIS: {{media url=cnisDocumentUri}}
 
 Minha análise será dividida em duas partes para facilitar nosso entendimento:
 
-**1. Lista de Pendências e Indicadores:**
+**1. Avaliação de Qualidade:**
+- **qualityScore**: Um score de 0 a 100 indicando a qualidade geral do CNIS. Quanto maior, melhor.
+- **riskLevel**: Classificação de risco: 'baixo', 'medio' ou 'alto'.
+- **contributionStatus**: Status resumido do histórico contributivo.
+
+**2. Lista de Pendências e Indicadores:**
 Para cada pendência ou indicador que eu encontrar (ex: PEXT, PREC-MENOR-MIN, AEXT-VI, PADM-EMPR, etc.), vou extrair e estruturar as seguintes informações para você:
 - **indicator**: A sigla exata do indicador.
 - **description**: Uma explicação clara e objetiva do que essa pendência significa para o segurado e seu processo de aposentadoria, conforme as normativas do INSS. Vou traduzir o "jargão" do INSS para você.
 - **recommendedAction**: Qual é a ação recomendada ou quais documentos são necessários para tratar ou resolver essa pendência. Serei específico e prático, de acordo com os procedimentos oficiais.
 - **relatedPeriods**: Uma lista dos períodos (no formato "DD/MM/AAAA - DD/MM/AAAA") que estão associados a essa pendência.
+- **severity**: Classificação de severidade: 'baixa', 'media' ou 'alta'.
 
-**2. Resumo Estratégico (summary):**
+**3. Resumo Estratégico (summary):**
 Elaborarei um resumo que vai além da simples lista. Pense nisso como meu parecer estratégico sobre o caso:
 - Uma avaliação da qualidade geral do histórico de contribuições.
 - A menção explícita sobre a possibilidade de pagar contribuições retroativas para períodos específicos, caso eu identifique lacunas ou indicadores que permitam essa ação, explicando brevemente o fundamento.
 - Uma análise sobre a viabilidade de continuar contribuindo, mesmo que o tempo de carência já tenha sido atingido, explicando como isso pode impactar o valor final do benefício.
 - Uma conclusão sobre a importância de regularizar todos os indicadores antes de qualquer pedido de benefício para evitar indeferimentos ou atrasos.
 
-Se eu não encontrar nenhum indicador, retornarei uma lista de pendências vazia e um resumo informando que o extrato parece estar regular, mas ainda assim, fornecerei uma análise estratégica geral sobre a qualidade das contribuições.`,
+**4. Recomendações e Próximos Passos:**
+- **recommendations**: Uma lista de 3-5 recomendações práticas para melhorar as perspectivas de aposentadoria.
+- **nextSteps**: Uma lista de ações imediatas que o segurado deve tomar.
+
+Se eu não encontrar nenhum indicador, retornarei uma lista de pendências vazia, um score alto de qualidade, e um resumo informando que o extrato parece estar regular, mas ainda assim, fornecerei uma análise estratégica geral sobre a qualidade das contribuições.`,
 });
 
 const analyzeCnisPendenciesFlow = ai.defineFlow(

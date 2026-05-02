@@ -13,13 +13,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Calculator, Loader2, ServerCrash, UploadCloud, Calendar, User, Lightbulb, FileSpreadsheet } from "lucide-react";
+import { Calculator, Loader2, ServerCrash, UploadCloud, Calendar, User, Lightbulb, FileSpreadsheet, TrendingUp, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { FileUploadCard } from "@/components/file-upload-card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarIcon } from "lucide-react"
@@ -154,78 +156,200 @@ export default function RmiCalculatorPage() {
       )}
 
       {state.data && (
-        <Card>
+        <>
+          {/* Resultado Principal */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">RMI Estimada</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold text-blue-600">{formatCurrency(state.data.rmiValue)}</p>
+                <p className="text-xs text-gray-600 mt-2">Renda Mensal Inicial</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Média Salarial</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-semibold">{formatCurrency(state.data.averageSalary)}</p>
+                <p className="text-xs text-gray-600 mt-2">Últimos 80% maiores salários</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Tempo de Contribuição</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-semibold">{state.data.contributionTime}</p>
+                <p className="text-xs text-gray-600 mt-2">Total acumulado</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Elegibilidade */}
+          <Card className={state.data.retirementEligibility.isEligible ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}>
             <CardHeader>
-                <CardTitle>Resultado do Cálculo de RMI</CardTitle>
-                <CardDescription>A análise foi concluída. Abaixo estão os resultados detalhados.</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                {state.data.retirementEligibility.isEligible ? <CheckCircle2 className="text-green-600" /> : <AlertTriangle className="text-yellow-600" />}
+                Elegibilidade para Aposentadoria
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-8">
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-center">
-                    <Card className="bg-muted/50">
-                        <CardHeader>
-                            <CardTitle className="text-lg">RMI Estimada</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-4xl font-bold text-primary">{formatCurrency(state.data.rmiValue)}</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Média Salarial</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-2xl font-semibold">{formatCurrency(state.data.averageSalary)}</p>
-                        </CardContent>
-                    </Card>
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Tempo de Contribuição</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <p className="text-xl font-semibold">{state.data.contributionTime}</p>
-                        </CardContent>
-                    </Card>
-                 </div>
-                
-                 <Alert variant="default" className="bg-muted/50">
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Status</p>
+                  <Badge variant={state.data.retirementEligibility.isEligible ? 'default' : 'secondary'} className="mt-1">
+                    {state.data.retirementEligibility.isEligible ? 'Elegível' : 'Não Elegível'}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Tipo de Aposentadoria</p>
+                  <p className="text-sm font-semibold mt-1">{state.data.retirementEligibility.retirementType}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Tempo Restante</p>
+                  <p className="text-sm font-semibold mt-1">
+                    {state.data.retirementEligibility.yearsUntilRetirement === 0 
+                      ? 'Pronto para se aposentar' 
+                      : `${state.data.retirementEligibility.yearsUntilRetirement} ano(s)`}
+                  </p>
+                </div>
+              </div>
+
+              {state.data.retirementEligibility.missingRequirements.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-2">Requisitos Faltantes</p>
+                  <ul className="space-y-1">
+                    {state.data.retirementEligibility.missingRequirements.map((req, index) => (
+                      <li key={index} className="text-sm text-gray-700">• {req}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Abas com Detalhes */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Análise Detalhada</CardTitle>
+              <CardDescription>Cenários, cálculos e recomendações</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="resumo" className="w-full">
+                <TabsList className="grid w-full grid-cols-5">
+                  <TabsTrigger value="resumo">Resumo</TabsTrigger>
+                  <TabsTrigger value="cenarios">Cenários</TabsTrigger>
+                  <TabsTrigger value="calculo">Cálculo</TabsTrigger>
+                  <TabsTrigger value="contribuicoes">Contribuições</TabsTrigger>
+                  <TabsTrigger value="recomendacoes">Recomendações</TabsTrigger>
+                </TabsList>
+
+                {/* Aba Resumo */}
+                <TabsContent value="resumo" className="space-y-4">
+                  <Alert variant="default" className="bg-muted/50">
                     <Lightbulb className="h-4 w-4" />
                     <AlertTitle>Resumo e Observações da IA</AlertTitle>
                     <AlertDescription className="mt-2">
-                        <p className="leading-relaxed whitespace-pre-wrap">{state.data.summary}</p>
-                        <div className="mt-4 text-xs space-y-1">
-                            <p><strong>Fórmula:</strong> {state.data.calculationFactors.calculationFormula}</p>
-                            <p><strong>Divisor:</strong> {state.data.calculationFactors.divisor} meses</p>
-                            <p><strong>Fator Previdenciário:</strong> {state.data.calculationFactors.contributionFactor}</p>
-                        </div>
+                      <p className="leading-relaxed whitespace-pre-wrap">{state.data.summary}</p>
                     </AlertDescription>
-                </Alert>
+                  </Alert>
+                </TabsContent>
 
-                <div className="space-y-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                        <FileSpreadsheet /> Salários de Contribuição Utilizados
-                    </h3>
-                    <div className="border rounded-lg overflow-hidden max-h-[400px] overflow-y-auto">
-                        <Table>
-                            <TableHeader className="sticky top-0 bg-secondary">
-                                <TableRow>
-                                    <TableHead>Competência</TableHead>
-                                    <TableHead className="text-right">Salário de Contribuição</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {state.data.contributions.map((c, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell>{c.competence}</TableCell>
-                                        <TableCell className="text-right font-mono">{formatCurrency(c.salary)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
+                {/* Aba Cenários */}
+                <TabsContent value="cenarios" className="space-y-4">
+                  <div className="space-y-3">
+                    {state.data.scenarios.map((scenario, index) => (
+                      <Card key={index} className="border-l-4 border-l-blue-500">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4" /> {scenario.name}
+                          </CardTitle>
+                          <CardDescription>{scenario.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-gray-600">RMI Estimada</p>
+                              <p className="text-xl font-bold text-blue-600">{formatCurrency(scenario.estimatedRmi)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-600">Tempo até Aposentadoria</p>
+                              <p className="text-xl font-bold">{scenario.yearsToRetirement} ano(s)</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </TabsContent>
 
+                {/* Aba Cálculo */}
+                <TabsContent value="calculo" className="space-y-4">
+                  <Alert variant="default" className="bg-blue-50 border-blue-200">
+                    <Calculator className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-blue-900">Detalhes do Cálculo</AlertTitle>
+                    <AlertDescription className="mt-2 text-blue-800 space-y-2">
+                      <div>
+                        <p className="font-semibold">Fórmula Aplicada:</p>
+                        <p className="text-sm">{state.data.calculationFactors.calculationFormula}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold">Divisor (meses):</p>
+                        <p className="text-sm">{state.data.calculationFactors.divisor}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold">Fator Previdenciário:</p>
+                        <p className="text-sm">{state.data.calculationFactors.contributionFactor.toFixed(4)}</p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                </TabsContent>
+
+                {/* Aba Contribuições */}
+                <TabsContent value="contribuicoes" className="space-y-4">
+                  <div className="border rounded-lg overflow-hidden max-h-[400px] overflow-y-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-secondary">
+                        <TableRow>
+                          <TableHead>Competência</TableHead>
+                          <TableHead className="text-right">Salário de Contribuição</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {state.data.contributions.map((c, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{c.competence}</TableCell>
+                            <TableCell className="text-right font-mono">{formatCurrency(c.salary)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                {/* Aba Recomendações */}
+                <TabsContent value="recomendacoes" className="space-y-4">
+                  <div className="space-y-3">
+                    {state.data.recommendations.map((rec, index) => (
+                      <Alert key={index} className="border-blue-200 bg-blue-50">
+                        <TrendingUp className="h-4 w-4 text-blue-600" />
+                        <AlertTitle className="text-blue-900">Recomendação {index + 1}</AlertTitle>
+                        <AlertDescription className="text-blue-800">
+                          {rec}
+                        </AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
-        </Card>
+          </Card>
+        </>
       )}
     </div>
   );
