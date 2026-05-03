@@ -15,31 +15,19 @@ import {
 } from "@/components/ui/sidebar";
 import {
   FileScan,
-  FileText,
   Gavel,
   LayoutDashboard,
-  ShieldAlert,
-  Calculator,
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
 import Link from "next/link";
-import { Logo } from "@/components/icons";
 
 const mainMenuItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Início", icon: LayoutDashboard },
 ];
 
 const analysisTools = [
   { href: "/dashboard/cnis-analyzer", label: "Análise de CNIS", icon: FileScan },
-  { href: "/dashboard/pap-analyzer", label: "Análise de PAP", icon: FileText },
-  { href: "/dashboard/ppp-analyzer", label: "Análise de PPP", icon: ShieldAlert },
-  { href: "/dashboard/retirement-analyzer", label: "Estruturador de Dados", icon: FileText },
-];
-
-const calculationTools = [
-    { href: "/dashboard/calculator", label: "Calculadora de Tempo", icon: Calculator },
-    { href: "/dashboard/rmi-calculator", label: "Calculadora de RMI", icon: Calculator },
 ];
 
 const generationTools = [
@@ -79,7 +67,7 @@ export function AppSidebar() {
           <SidebarSeparator className="my-3"/>
 
           <SidebarGroup>
-            <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Análises</SidebarGroupLabel>
+            <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Análise Previdenciária</SidebarGroupLabel>
               {analysisTools.map((item) => (
                 <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
@@ -97,31 +85,10 @@ export function AppSidebar() {
               ))}
           </SidebarGroup>
 
-           <SidebarSeparator className="my-3"/>
-
-          <SidebarGroup>
-              <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Cálculos</SidebarGroupLabel>
-              {calculationTools.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      data-active={pathname === item.href}
-                      tooltip={item.label}
-                       className="relative"
-                    >
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-          </SidebarGroup>
-
           <SidebarSeparator className="my-3"/>
 
           <SidebarGroup>
-              <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Geração</SidebarGroupLabel>
+              <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Documentos</SidebarGroupLabel>
               {generationTools.map((item) => (
                 <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
