@@ -19,99 +19,109 @@ import {
   LayoutDashboard,
   ChevronsLeft,
   ChevronsRight,
+  UserCircle,
+  LogOut,
+  HelpCircle
 } from "lucide-react";
 import Link from "next/link";
-
-const mainMenuItems = [
-  { href: "/dashboard", label: "Início", icon: LayoutDashboard },
-];
-
-const analysisTools = [
-  { href: "/dashboard/cnis-analyzer", label: "Análise de CNIS", icon: FileScan },
-];
-
-const generationTools = [
-    { href: "/dashboard/document-generator", label: "Gerador de Petições", icon: Gavel },
-]
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { state, toggleSidebar } = useSidebar();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push("/");
+  };
+
+  const menuItems = [
+    { 
+        group: "Principal",
+        items: [
+            { href: "/dashboard", label: "Visão Geral", icon: LayoutDashboard },
+        ]
+    },
+    {
+        group: "Ferramentas",
+        items: [
+            { href: "/dashboard/cnis-analyzer", label: "Analisar CNIS", icon: FileScan },
+            { href: "/dashboard/document-generator", label: "Gerador de Petições", icon: Gavel },
+        ]
+    },
+    {
+        group: "Conta",
+        items: [
+            { href: "/dashboard/profile", label: "Meu Perfil", icon: UserCircle },
+            { href: "#", label: "Ajuda & Suporte", icon: HelpCircle },
+        ]
+    }
+  ];
 
   const CollapseIcon = state === 'expanded' ? ChevronsLeft : ChevronsRight;
 
   return (
     <Sidebar 
       collapsible="icon" 
-      variant="inset"
-      className="bg-sidebar/95 backdrop-blur supports-[backdrop-filter]:bg-sidebar/60"
+      variant="floating"
+      className="border-r shadow-sm"
     >
-      <SidebarContent className="flex-1 p-2">
-        <SidebarMenu className="flex-1 mt-4">
-          {mainMenuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  data-active={pathname === item.href}
-                  tooltip={item.label}
-                  className="relative"
+      <SidebarContent className="p-4 space-y-6">
+        {menuItems.map((group, idx) => (
+            <SidebarGroup key={idx} className="p-0">
+                <SidebarGroupLabel className="px-2 mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
+                    {group.group}
+                </SidebarGroupLabel>
+                <SidebarMenu>
+                    {group.items.map((item) => (
+                        <SidebarMenuItem key={item.href}>
+                            <SidebarMenuButton
+                                asChild
+                                isActive={pathname === item.href}
+                                tooltip={item.label}
+                                className={`h-11 px-3 rounded-xl transition-all duration-200 ${
+                                    pathname === item.href 
+                                    ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/90" 
+                                    : "hover:bg-muted"
+                                }`}
+                            >
+                                <Link href={item.href} className="flex items-center gap-3">
+                                    <item.icon className={`w-5 h-5 ${pathname === item.href ? "text-white" : "text-slate-500"}`} />
+                                    <span className="font-semibold text-sm">{item.label}</span>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                </SidebarMenu>
+            </SidebarGroup>
+        ))}
+      </SidebarContent>
+      
+      <SidebarFooter className="p-4 border-t bg-muted/20">
+        <SidebarMenu>
+            <SidebarMenuItem>
+                <SidebarMenuButton 
+                    onClick={handleLogout}
+                    className="h-11 px-3 rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                  </Link>
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-bold text-sm">Sair da Conta</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-          ))}
-
-          <SidebarSeparator className="my-3"/>
-
-          <SidebarGroup>
-            <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Análise Previdenciária</SidebarGroupLabel>
-              {analysisTools.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      data-active={pathname === item.href}
-                      tooltip={item.label}
-                      className="relative"
-                    >
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-          </SidebarGroup>
-
-          <SidebarSeparator className="my-3"/>
-
-          <SidebarGroup>
-              <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center">Documentos</SidebarGroupLabel>
-              {generationTools.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      data-active={pathname === item.href}
-                      tooltip={item.label}
-                       className="relative"
-                    >
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-          </SidebarGroup>
+            
+            <SidebarMenuItem className="mt-2">
+                <SidebarMenuButton 
+                    onClick={toggleSidebar} 
+                    className="h-10 px-3 rounded-xl hover:bg-muted"
+                >
+                    <CollapseIcon className="w-5 h-5 text-slate-400" />
+                    <span className="text-xs font-medium text-slate-500">Recolher Menu</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarContent>
-      <SidebarFooter className="p-2 border-t">
-         <SidebarMenuButton onClick={toggleSidebar} tooltip={state === 'expanded' ? "Recolher" : "Expandir"}>
-            <CollapseIcon />
-            <span className="group-data-[collapsible=icon]:hidden">{state === 'expanded' ? "Recolher Menu" : "Expandir Menu"}</span>
-          </SidebarMenuButton>
       </SidebarFooter>
     </Sidebar>
   );

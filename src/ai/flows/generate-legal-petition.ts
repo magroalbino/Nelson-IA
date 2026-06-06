@@ -11,8 +11,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-// Tool Definition: This is how we define a tool the AI can use.
-// In a real scenario, this function would make a fetch() call to an external API.
 const getSalarioMinimoAtual = ai.defineTool(
   {
     name: 'getSalarioMinimoAtual',
@@ -24,9 +22,6 @@ const getSalarioMinimoAtual = ai.defineTool(
     }),
   },
   async () => {
-    // << Em um cenário real, aqui você faria a chamada para a API externa >>
-    // Ex: const response = await fetch('https://api.dados.gov.br/...');
-    // const data = await response.json();
     console.log('Ferramenta getSalarioMinimoAtual foi chamada pela IA!');
     return { valor: 1412.00, vigencia: "2024" };
   }
@@ -34,8 +29,7 @@ const getSalarioMinimoAtual = ai.defineTool(
 
 
 const GenerateLegalPetitionInputSchema = z.object({
-  seguradoData: z.string().optional().describe('All text data related to the client, CNIS, PAP, PPP, and eligibility analysis.'),
-  documentUri: z.string().optional().describe("A document with client data, as a data URI."),
+  documentUri: z.string().describe("A document with client data (CNIS, PPP, etc), as a data URI."),
   tipoPetição: z
     .string()
     .describe('The type of legal petition to generate (administrativo ou judicial).'),
@@ -58,7 +52,6 @@ export async function generateLegalPetition(
 
 const prompt = ai.definePrompt({
   name: 'generateLegalPetitionPrompt',
-  // We make the tool available to the AI model here.
   tools: [getSalarioMinimoAtual],
   input: {
     schema: GenerateLegalPetitionInputSchema,
@@ -68,13 +61,15 @@ const prompt = ai.definePrompt({
   },
   prompt: `Olá! Sou o Nelson, seu assistente previdenciário. Como um assistente previdenciário de elite, sou especialista em redigir peças processuais e administrativas com alta precisão técnica e argumentativa, sempre com base na legislação brasileira.
 
-Minha tarefa é gerar uma petição (do tipo '{{{tipoPetição}}}') com base nos dados consolidados do segurado que você me forneceu, que podem vir de um texto e/ou de um documento.
+Minha tarefa é gerar uma petição (do tipo '{{{tipoPetição}}}') com base nos dados consolidados do segurado que você me forneceu através do documento anexo.
+
+Vamos analisar o documento: {{media url=documentUri}}
 
 **Minhas Instruções Detalhadas:**
 
-1.  **Análise Profunda dos Dados:** Vou examinar todos os dados do segurado, tanto do texto quanto do documento, se houver. Identificarei os pontos cruciais:
+1.  **Análise Profunda dos Dados:** Vou examinar todos os dados do segurado no documento. Identificarei os pontos cruciais:
     *   Períodos de atividade especial (com base no PPP) que podem não ter sido reconhecidos.
-    *   Vínculos empregatícios no CNIS ou PAP que possuem pendências ou que precisam ser comprovados.
+    *   Vínculos empregatícios no CNIS que possuem pendências ou que precisam ser comprovados.
     *   O resultado da análise de elegibilidade, focando nos requisitos que foram ou não atendidos.
 
 2.  **Uso de Ferramentas:** Se eu precisar de informações externas atualizadas, como o valor do salário mínimo para um cálculo, utilizarei as ferramentas disponíveis e incorporarei o resultado de forma natural no texto da petição.
@@ -91,17 +86,6 @@ Minha tarefa é gerar uma petição (do tipo '{{{tipoPetição}}}') com base nos
     *   Finalizarei com os pedidos claros e objetivos (ex: "requer o reconhecimento do período especial de X a Y", "a concessão do benefício de aposentadoria Z", etc.).
 
 5.  **Sugestão de Documentos Essenciais:** Com base nos argumentos que montei, listarei os documentos que considero **essenciais** para comprovar o direito (ex: "PPP da empresa X", "Laudo Técnico das Condições Ambientais de Trabalho (LTCAT)", "Carteira de Trabalho", "Procuração", etc.).
-
-**Dados do Segurado (Texto):**
-{{{seguradoData}}}
-
-{{#if documentUri}}
-**Dados do Segurado (Documento):**
-{{media url=documentUri}}
-{{/if}}
-
-**Tipo de Petição a ser Gerada:**
-{{{tipoPetição}}}
 
 Executarei a tarefa com o mais alto nível de detalhe e expertise jurídica.
   `,

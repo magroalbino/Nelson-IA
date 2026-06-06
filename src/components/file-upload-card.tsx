@@ -1,166 +1,135 @@
 "use client";
 
-import { useState, useRef, useCallback, ChangeEvent } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { UploadCloud, File as FileIcon, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useRef } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { UploadCloud, FileText, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface FileUploadCardProps {
   onFileSelect: (file: File | null, dataUri: string) => void;
   acceptedFileTypes?: string[];
-  maxFileSize?: number; // in bytes
+  maxSizeMB?: number;
 }
 
-export function FileUploadCard({
-  onFileSelect,
-  acceptedFileTypes = ["application/pdf", "text/csv"],
-  maxFileSize = 5 * 1024 * 1024, // 5MB
+export function FileUploadCard({ 
+  onFileSelect, 
+  acceptedFileTypes = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+  maxSizeMB = 10 
 }: FileUploadCardProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [progress, setProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback((selectedFile: File) => {
-    if (!selectedFile) {
-        if (file) removeFile();
-        return;
-    }
-    
-    if (!acceptedFileTypes.includes(selectedFile.type)) {
+  const handleFile = (file: File) => {
+    if (acceptedFileTypes.length > 0 && !acceptedFileTypes.includes(file.type)) {
       toast({
-        variant: "destructive",
-        title: "Tipo de arquivo inválido",
-        description: `Por favor, selecione um arquivo ${acceptedFileTypes.join(", ")}.`,
+        title: "Arquivo inválido",
+        description: "Por favor, selecione um arquivo no formato permitido (PDF ou Word).",
+        variant: "destructive"
       });
       return;
     }
 
-    if (selectedFile.size > maxFileSize) {
+    if (file.size > maxSizeMB * 1024 * 1024) {
       toast({
-        variant: "destructive",
         title: "Arquivo muito grande",
-        description: `O tamanho máximo do arquivo é ${maxFileSize / (1024 * 1024)}MB.`,
+        description: `O tamanho máximo permitido é ${maxSizeMB}MB.`,
+        variant: "destructive"
       });
       return;
     }
-
-    setFile(selectedFile);
-    setProgress(0);
 
     const reader = new FileReader();
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percentage = Math.round((event.loaded * 100) / event.total);
-        setProgress(percentage);
-      }
-    };
     reader.onload = (e) => {
-      setProgress(100);
-      onFileSelect(selectedFile, e.target?.result as string);
+      const dataUri = e.target?.result as string;
+      setSelectedFile(file);
+      onFileSelect(file, dataUri);
     };
-    reader.onerror = () => {
-       toast({
-        variant: "destructive",
-        title: "Erro de Leitura",
-        description: "Não foi possível ler o arquivo.",
-      });
-      setFile(null);
-    }
-    reader.readAsDataURL(selectedFile);
-  }, [acceptedFileTypes, maxFileSize, onFileSelect, toast, file]);
+    reader.readAsDataURL(file);
+  };
 
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+  const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0]);
-    } else {
-      handleFile(null!);
-    }
+  const removeFile = () => {
+    setSelectedFile(null);
+    onFileSelect(null, "");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const removeFile = () => {
-    setFile(null);
-    setProgress(0);
-    if (inputRef.current) {
-        inputRef.current.value = "";
-    }
-    onFileSelect(null!, "");
-  };
-  
   return (
     <Card 
-      className={`border-2 border-dashed transition-colors ${isDragging ? "border-primary bg-accent" : "hover:border-primary/50 hover:bg-accent/50"}`}
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
+      className={`relative border-2 border-dashed transition-all duration-200 ${
+        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/20"
+      } ${selectedFile ? "bg-muted/30" : "bg-white"}`}
+      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={onDrop}
     >
-      <CardContent className="p-0">
-        <input
-          ref={inputRef}
-          type="file"
-          className="hidden"
-          onChange={handleInputChange}
-          accept={acceptedFileTypes.join(",")}
-        />
-        {!file ? (
-          <div 
-             className="flex flex-col items-center justify-center p-6 text-center cursor-pointer space-y-2"
-             onClick={() => inputRef.current?.click()}
-          >
-            <UploadCloud className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="text-base font-medium">
-              Clique para selecionar ou arraste o arquivo aqui
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              {acceptedFileTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} até {maxFileSize / (1024*1024)}MB
-            </p>
-          </div>
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        className="hidden" 
+        onChange={(e) => e.target.files && handleFile(e.target.files[0])}
+        accept={acceptedFileTypes.join(",")}
+      />
+
+      <div className="p-8 flex flex-col items-center justify-center text-center gap-4">
+        {selectedFile ? (
+          <>
+            <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center text-green-600">
+              <FileCheck className="w-8 h-8" />
+            </div>
+            <div>
+              <p className="font-bold text-lg text-slate-900">{selectedFile.name}</p>
+              <p className="text-sm text-slate-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={removeFile} className="mt-2 text-destructive hover:bg-destructive/10">
+              <X className="w-4 h-4 mr-2" /> Remover Arquivo
+            </Button>
+          </>
         ) : (
-          <div className="p-4 space-y-4">
-             <div className="flex items-center justify-between rounded-md border p-3 text-left">
-                <div className="flex items-center gap-3">
-                    <FileIcon className="h-8 w-8 text-primary" />
-                    <div className="truncate">
-                        <p className="font-medium truncate">{file.name}</p>
-                        <p className="text-sm text-muted-foreground">{(file.size / 1024).toFixed(2)} KB</p>
-                    </div>
-                </div>
-                <Button variant="ghost" size="icon" onClick={removeFile}>
-                    <X className="h-5 w-5" />
-                </Button>
-             </div>
-             <Progress value={progress} className="w-full" />
-             {progress === 100 && <p className="text-sm text-green-600 text-center">Arquivo pronto para análise!</p>}
-          </div>
+          <>
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              <UploadCloud className="w-8 h-8" />
+            </div>
+            <div>
+              <p className="font-bold text-xl text-slate-900">Clique ou arraste o documento</p>
+              <p className="text-slate-500 mt-1">Suporta PDF, DOC e DOCX (Máx. {maxSizeMB}MB)</p>
+            </div>
+            <Button onClick={() => fileInputRef.current?.click()} type="button" size="lg" className="mt-2 font-bold">
+              Selecionar Arquivo
+            </Button>
+          </>
         )}
-      </CardContent>
+      </div>
     </Card>
+  );
+}
+
+function FileCheck(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="m9 15 2 2 4-4" />
+    </svg>
   );
 }
