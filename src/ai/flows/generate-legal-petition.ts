@@ -1,94 +1,52 @@
 'use server';
 
-/**
- * @fileOverview A legal petition generation AI agent.
- *
- * - generateLegalPetition - A function that generates legal petitions.
- * - GenerateLegalPetitionInput - The input type for the generateLegalPetition function.
- * - GenerateLegalPetitionOutput - The return type for the generateLegalPetition function.
- */
-
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const getSalarioMinimoAtual = ai.defineTool(
   {
     name: 'getSalarioMinimoAtual',
-    description: 'Obtém o valor atual do salário mínimo nacional no Brasil. Útil para cálculos de valor de causa ou para pedidos de Benefício de Prestação Continuada (BPC).',
+    description: 'Obtém o valor atual do salário mínimo nacional no Brasil.',
     inputSchema: z.object({}),
     outputSchema: z.object({
-        valor: z.number().describe('O valor numérico do salário mínimo.'),
-        vigencia: z.string().describe('O ano de vigência do valor, ex: "2024".')
+        valor: z.number(),
+        vigencia: z.string()
     }),
   },
   async () => {
-    console.log('Ferramenta getSalarioMinimoAtual foi chamada pela IA!');
     return { valor: 1412.00, vigencia: "2024" };
   }
 )
 
-
 const GenerateLegalPetitionInputSchema = z.object({
-  documentUri: z.string().describe("A document with client data (CNIS, PPP, etc), as a data URI."),
-  tipoPetição: z
-    .string()
-    .describe('The type of legal petition to generate (administrativo ou judicial).'),
+  documentUri: z.string(),
+  tipoPetição: z.string(),
 });
-export type GenerateLegalPetitionInput = z.infer<typeof GenerateLegalPetitionInputSchema>;
 
 const GenerateLegalPetitionOutputSchema = z.object({
-  peticao: z.string().describe('The generated legal petition.'),
-  documentosAnexos: z
-    .string()
-    .describe('Suggestions for documents to attach to the petition.'),
+  peticao: z.string(),
+  documentosAnexos: z.string(),
 });
-export type GenerateLegalPetitionOutput = z.infer<typeof GenerateLegalPetitionOutputSchema>;
 
-export async function generateLegalPetition(
-  input: GenerateLegalPetitionInput
-): Promise<GenerateLegalPetitionOutput> {
-  return generateLegalPetitionFlow(input);
+export async function generateLegalPetition(input: { documentUri: string, tipoPetição: string }) {
+  console.log("[PETIÇÃO] Iniciando geração...");
+  try {
+    const result = await generateLegalPetitionFlow(input);
+    console.log("[PETIÇÃO] Geração concluída.");
+    return result;
+  } catch (error) {
+    console.error("[PETIÇÃO] Erro fatal no flow:", error);
+    throw error;
+  }
 }
 
 const prompt = ai.definePrompt({
   name: 'generateLegalPetitionPrompt',
   tools: [getSalarioMinimoAtual],
-  input: {
-    schema: GenerateLegalPetitionInputSchema,
-  },
-  output: {
-    schema: GenerateLegalPetitionOutputSchema,
-  },
-  prompt: `Olá! Sou o Nelson, seu assistente previdenciário. Como um assistente previdenciário de elite, sou especialista em redigir peças processuais e administrativas com alta precisão técnica e argumentativa, sempre com base na legislação brasileira.
-
-Minha tarefa é gerar uma petição (do tipo '{{{tipoPetição}}}') com base nos dados consolidados do segurado que você me forneceu através do documento anexo.
-
-Vamos analisar o documento: {{media url=documentUri}}
-
-**Minhas Instruções Detalhadas:**
-
-1.  **Análise Profunda dos Dados:** Vou examinar todos os dados do segurado no documento. Identificarei os pontos cruciais:
-    *   Períodos de atividade especial (com base no PPP) que podem não ter sido reconhecidos.
-    *   Vínculos empregatícios no CNIS que possuem pendências ou que precisam ser comprovados.
-    *   O resultado da análise de elegibilidade, focando nos requisitos que foram ou não atendidos.
-
-2.  **Uso de Ferramentas:** Se eu precisar de informações externas atualizadas, como o valor do salário mínimo para um cálculo, utilizarei as ferramentas disponíveis e incorporarei o resultado de forma natural no texto da petição.
-
-3.  **Construção da Argumentação Jurídica:**
-    *   Não vou apenas preencher um modelo. Criarei uma narrativa coesa e lógica para o seu caso.
-    *   Iniciarei com um resumo dos fatos.
-    *   Para cada ponto identificado (ex: pedido de reconhecimento de tempo especial), desenvolverei um tópico específico.
-    *   **Fundamentarei cada tópico com a legislação brasileira pertinente (ex: Lei 8.213/91, Decretos, Instruções Normativas do INSS, etc.) e, se possível, mencionarei teses jurídicas relevantes ou súmulas (ex: Tema 1031 do STJ para EPI, Súmula 9 da TNU).**
-
-4.  **Estrutura da Petição:**
-    *   Usarei uma formatação clara (negrito, parágrafos, listas) para facilitar a leitura.
-    *   Incluirei campos para os dados do segurado (Nome, CPF, NIT) e o endereçamento correto (Ex: "AO CHEFE DA AGÊNCIA DA PREVIDÊNCIA SOCIAL EM [CIDADE]" para administrativo ou "EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) FEDERAL DO JUIZADO ESPECIAL FEDERAL DE [CIDADE/UF]" para judicial).
-    *   Finalizarei com os pedidos claros e objetivos (ex: "requer o reconhecimento do período especial de X a Y", "a concessão do benefício de aposentadoria Z", etc.).
-
-5.  **Sugestão de Documentos Essenciais:** Com base nos argumentos que montei, listarei os documentos que considero **essenciais** para comprovar o direito (ex: "PPP da empresa X", "Laudo Técnico das Condições Ambientais de Trabalho (LTCAT)", "Carteira de Trabalho", "Procuração", etc.).
-
-Executarei a tarefa com o mais alto nível de detalhe e expertise jurídica.
-  `,
+  input: { schema: GenerateLegalPetitionInputSchema },
+  output: { schema: GenerateLegalPetitionOutputSchema },
+  prompt: `Você é o Nelson, advogado previdenciário sênior. Gere uma petição do tipo '{{{tipoPetição}}}' baseada no documento: {{media url=documentUri}}
+Fundamente com a legislação brasileira (Lei 8.213/91, etc.). Forneça a petição e sugestões de anexos.`,
 });
 
 const generateLegalPetitionFlow = ai.defineFlow(
@@ -99,6 +57,7 @@ const generateLegalPetitionFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) throw new Error("A IA não retornou um resultado válido.");
+    return output;
   }
 );
