@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { generateLegalPetition } from "@/ai/flows/generate-legal-petition";
 import { analyzeCnisPendencies } from "@/ai/flows/analyze-cnis-pendencies";
-import React from "react";
 
 // Schema for Legal Petition Generation
 const petitionSchema = z.object({
@@ -12,7 +11,6 @@ const petitionSchema = z.object({
     errorMap: () => ({ message: "Selecione um tipo de petição válido." }),
   }),
 });
-
 
 interface PetitionState {
   errors?: {
@@ -38,7 +36,7 @@ export async function generatePetitionAction(
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: "Dados inválidos. Por favor, anexe o documento e selecione o tipo de petição.",
+      message: "Dados inválidos.",
     };
   }
 
@@ -48,14 +46,13 @@ export async function generatePetitionAction(
       message: "Petição gerada com sucesso!",
       data: result,
     };
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error("[ACTION] Erro Petição:", error);
     return {
-      message: "Falha ao gerar a petição. Tente novamente.",
+      message: error?.message || "Falha ao gerar a petição. Tente novamente.",
     };
   }
 }
-
 
 // Schema for CNIS Analysis
 const cnisSchema = z.object({
@@ -65,21 +62,7 @@ const cnisSchema = z.object({
 interface CnisState {
     errors?: { cnisDocumentUri?: string[] };
     message?: string | null;
-    data?: {
-      qualityScore: number;
-      riskLevel: 'baixo' | 'médio' | 'alto';
-      contributionStatus: string;
-      pendencies: {
-        indicator: string;
-        description: string;
-        recommendedAction: string;
-        relatedPeriods: string[];
-        severity: 'baixa' | 'média' | 'alta';
-      }[];
-      summary: string;
-      recommendations: string[];
-      nextSteps: string[];
-    } | null;
+    data?: any | null;
 }
 
 export async function analyzeCnisAction(prevState: CnisState, formData: FormData): Promise<CnisState> {
@@ -100,10 +83,10 @@ export async function analyzeCnisAction(prevState: CnisState, formData: FormData
             message: 'Análise do CNIS concluída!',
             data: result,
         };
-    } catch (error) {
-        console.error(error);
+    } catch (error: any) {
+        console.error("[ACTION] Erro CNIS:", error);
         return {
-            message: 'Falha ao analisar o CNIS. O formato do arquivo pode ser inválido ou o documento estar ilegível.',
+            message: error?.message || "Falha ao analisar o CNIS. O documento pode ser incompatível.",
         };
     }
 }

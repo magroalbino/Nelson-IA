@@ -7,17 +7,18 @@ const AnalyzeCnisPendenciesInputSchema = z.object({
   cnisDocumentUri: z.string(),
 });
 
+// Tornando o esquema mais flexível para evitar erros de validação da IA
 const PendencySchema = z.object({
     indicator: z.string(),
     description: z.string(),
     recommendedAction: z.string(),
-    relatedPeriods: z.array(z.string()),
-    severity: z.enum(['baixa', 'média', 'alta'])
+    relatedPeriods: z.array(z.string()).optional().default([]),
+    severity: z.string().describe("baixa, média ou alta")
 });
 
 const AnalyzeCnisPendenciesOutputSchema = z.object({
     qualityScore: z.number(),
-    riskLevel: z.enum(['baixo', 'médio', 'alto']),
+    riskLevel: z.string().describe("baixo, médio ou alto"),
     contributionStatus: z.string(),
     pendencies: z.array(PendencySchema),
     summary: z.string(),
@@ -27,13 +28,21 @@ const AnalyzeCnisPendenciesOutputSchema = z.object({
 
 export async function analyzeCnisPendencies(input: { cnisDocumentUri: string }) {
   console.log("[CNIS] Iniciando análise...");
+  
+  // Validação básica do Data URI
+  if (!input.cnisDocumentUri.startsWith('data:')) {
+    console.error("[CNIS] Formato de documento inválido (não é data URI)");
+    throw new Error("Documento em formato inválido.");
+  }
+
   try {
     const result = await analyzeCnisPendenciesFlow(input);
-    console.log("[CNIS] Análise concluída com sucesso.");
+    console.log("[CNIS] Análise concluída.");
     return result;
-  } catch (error) {
-    console.error("[CNIS] Erro fatal no flow:", error);
-    throw error;
+  } catch (error: any) {
+    console.error("[CNIS] Erro no flow:", error?.message || error);
+    // Retornar erro amigável para a Action
+    throw new Error(error?.message || "Erro desconhecido na análise.");
   }
 }
 
@@ -41,8 +50,14 @@ const prompt = ai.definePrompt({
   name: 'analyzeCnisPendenciesPrompt',
   input: {schema: AnalyzeCnisPendenciesInputSchema},
   output: {schema: AnalyzeCnisPendenciesOutputSchema},
-  prompt: `Você é o Nelson, advogado previdenciário sênior. Analise o CNIS: {{media url=cnisDocumentUri}}
-Extraia indicadores, explique significados e sugira ações. Use 'baixo'/'médio'/'alto' e 'baixa'/'média'/'alta'.`,
+  prompt: `Você é o Nelson, advogado previdenciário sênior. Sua tarefa é analisar o CNIS fornecido.
+  
+  DOCUMENTO: {{media url=cnisDocumentUri}}
+  
+  Extraia todos os indicadores de pendência. 
+  Para cada um, forneça descrição e ação recomendada.
+  Avalie o score de qualidade (0-100) e o risco (baixo, médio, alto).
+  Dê um resumo estratégico e próximos passos.`,
 });
 
 const analyzeCnisPendenciesFlow = ai.defineFlow(
@@ -52,8 +67,13 @@ const analyzeCnisPendenciesFlow = ai.defineFlow(
     outputSchema: AnalyzeCnisPendenciesOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    if (!output) throw new Error("A IA não retornou um resultado válido.");
-    return output;
+    try {
+        const {output} = await prompt(input);
+        if (!output) throw new Error("A IA não conseguiu processar este documento.");
+        return output;
+    } catch (e: any) {
+        console.error("[CNIS] Erro na chamada do prompt:", e);
+        throw e;
+    }
   }
 );
