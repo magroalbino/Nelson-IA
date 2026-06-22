@@ -1,10 +1,10 @@
 import {genkit} from 'genkit';
-import {googleAI, gemini15Flash} from '@genkit-ai/googleai';
+import {googleAI} from '@genkit-ai/googleai';
 
 export const ai = genkit({
   plugins: [
     googleAI()
   ],
-  // Usando a referência oficial do modelo exportada pelo plugin
-  model: gemini15Flash,
+  // O formato canônico para o plugin googleAI no Genkit é 'googleai/gemini-1.5-flash'
+  model: 'googleai/gemini-1.5-flash',
 });
