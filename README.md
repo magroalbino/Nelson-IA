@@ -1,110 +1,74 @@
-# Nelson-IA
+# Nelson-IA ⚖️🤖
 
-> Ferramenta de inteligência artificial para análise previdenciária, voltada para advogados, escritórios e profissionais do direito previdenciário.
-
----
-
-## 🔍 Visão Geral
-
-O **Nelson-IA** é um sistema próprio para automatizar etapas críticas no tratamento de casos previdenciários:
-
-- Análise de **CNIS, PPP, PAP** e documentos correlatos;  
-- Identificação de vínculos de trabalho, períodos contributivos, lacunas e irregularidades;  
-- Cálculo de tempo de contribuição (urbano, rural e híbrido), carência e elegibilidade para diversos benefícios;  
-- Geração automática de petições e peças processuais, com templates prontos para uso administrativo ou judicial.
+> O seu assistente inteligente para análise estratégica de CNIS. Projetado para ser simples, intuitivo e poderoso, tanto para segurados quanto para advogados previdenciários.
 
 ---
 
-## ⚙️ Estrutura do Projeto
+## 🔍 O que é o Nelson-IA?
 
-O repositório está organizado conforme:
+O **Nelson-IA** é uma plataforma especializada na análise do **Extrato de Contribuições (CNIS)** do INSS. Utilizando inteligência artificial de última geração (Google Gemini 1.5 Flash), o Nelson transforma documentos complexos em relatórios claros, identificando pendências, riscos e oportunidades para a aposentadoria.
 
+### 🌟 Por que usar o Nelson?
+
+- **Simplicidade para Idosos**: Interface limpa, textos grandes e explicações sem "juridiquês".
+- **Precisão para Advogados**: Identificação automática de indicadores (PEXT, AEXT-VI, etc.) e sugestões de ações fundamentadas.
+- **Petições Instantâneas**: Gere peças processuais e administrativas baseadas diretamente nos dados analisados.
+
+---
+
+## 🚀 Funcionalidades Principais
+
+- **Analisador de CNIS**: Identifica automaticamente lacunas, pendências e irregularidades no extrato.
+- **Score de Qualidade**: Uma nota de 0 a 100 que indica quão "limpo" está o seu histórico para a aposentadoria.
+- **Gerador de Petições**: Cria documentos jurídicos fundamentados na Lei 8.213/91 e normas do INSS a partir dos arquivos anexados.
+- **Modo Acessível**: Design focado em legibilidade e facilidade de navegação.
+
+---
+
+## 🛠️ Tecnologia
+
+- **Frontend**: Next.js (React) com Tailwind CSS.
+- **Inteligência Artificial**: Google Genkit + Gemini 1.5 Flash.
+- **Estilização**: Shadcn/UI para componentes acessíveis.
+- **Hospedagem**: Vercel.
+
+---
+
+## ⚙️ Configuração do Ambiente
+
+Para rodar o projeto localmente ou em produção (Vercel), você precisará configurar as seguintes variáveis de ambiente:
+
+```env
+GOOGLE_GENAI_API_KEY=sua_chave_do_google_ai_studio
 ```
-.
-├── src/                # Código‑fonte (frontend / backend / componentes)
-├── docs/               # Documentação adicional (especificações, modelos de petição, etc.)
-├── .gitignore          
-├── README.md           # Este arquivo
-├── package.json        # Dependências e scripts (frontend/web)
-├── next.config.ts      # Configurações do framework Next.js
-├── tailwind.config.ts  # Configuração de estilo (UI)
-└── outros arquivos de configuração (Firebase, hosting etc.)
-```
+
+*Obtenha sua chave gratuitamente no [Google AI Studio](https://aistudio.google.com/app/apikey).*
 
 ---
 
-## 🚀 Como usar / executar localmente
+## 📦 Como Executar
 
-1. Clone o repositório:
-
+1. **Clone o repositório**:
    ```bash
    git clone https://github.com/magroalbino/Nelson-IA.git
    cd Nelson-IA
    ```
 
-2. Instale dependências:
-
+2. **Instale as dependências**:
    ```bash
    npm install
    ```
 
-3. Configurações iniciais:
-
-   - Verifique arquivos de configuração (`next.config.ts`, `tailwind.config.ts`, `components.json`, etc.).  
-   - Caso haja variáveis de ambiente (ex: credenciais de OCR, bases legais, etc.), configure o `.env` conforme instruções que devem constar em `docs/`.
-
-4. Rode localmente:
-
+3. **Inicie o servidor de desenvolvimento**:
    ```bash
    npm run dev
    ```
 
-   Isso deve iniciar o app (frontend) em modo de desenvolvimento.
-
 ---
 
-## 🧰 Funcionalidades previstas / roadmap
+## 🛡️ Privacidade e Segurança
 
-| Módulo | Status | Descrição |
-|--------|--------|-----------|
-| Analisador de CNIS | Em construção | Extrair e estruturar dados, detectar lacunas |
-| Analisador de PAP | Planejado | Processar PAP, verificar vínculos empregatícios |
-| Analisador de PPP | Planejado | Identificar agentes nocivos, verificar direito à aposentadoria especial |
-| Aposentadoria rural / híbrida | Planejado | Cálculo de elegibilidade e tempo rural vs urbano |
-| Gerador de petições | Em construção | Modelos de petição preenchidos automaticamente com dados extraídos |
-
----
-
-## 📚 Legislação, Referências e Base de Conhecimento
-
-O agente depende de uma base jurídica atualizada: leis, portarias, súmulas e decisões que regulem:
-
-- regras de aposentadoria (tempo de contribuição, idade, transição)  
-- normas de aposentadoria rural/híbrida  
-- normas sobre agentes nocivos / PPP  
-- jurisprudência e doutrina previdenciária
-
-Essas informações devem estar versionadas/documentadas em `docs/`.
-
----
-
-## 🛡 Privacidade, Qualidade e Segurança
-
-- Dados pessoais e documentos previdenciários são sensíveis — cuidado com armazenamento e acesso.  
-- O sistema de extração e análise deve incluir logs de decisão, auditoria e rastreabilidade (quem fez, quando e com base em quê).  
-- Testes com casos reais (anonimizados) para garantir precisão e segurança jurídica.
-
----
-
-## 🤝 Contribuições
-
-Contribuições são bem‐vindas! Você pode ajudar com:
-
-- exemplos anotados de documentos CNIS/PPP/PAP;  
-- melhoria dos modelos de extração de dados;  
-- templates de petições variados;  
-- melhorias de interface e usabilidade;  
-- ajustes legais conforme mudanças de normas.
+O Nelson-IA preza pela segurança dos dados sensíveis. O processamento de documentos é feito de forma segura e os dados não são utilizados para treinamento de modelos públicos sem consentimento.
 
 ---
 
@@ -116,7 +80,6 @@ Este projeto está sob a licença **MIT**.
 
 ## 📧 Contato
 
-Para dúvidas, sugestões ou reportar bugs:  
+Dúvidas ou sugestões?
 Autor: **magroalbino**  
-GitHub: [magroalbino](https://github.com/magroalbino)  
-Email: *[yanrenat@gmail.com]*  
+GitHub: [magroalbino](https://github.com/magroalbino)
