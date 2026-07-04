@@ -14,9 +14,8 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileScan, Loader2, ServerCrash, Lightbulb, AlertTriangle, CheckCircle2, Target, Info, ArrowDownCircle } from "lucide-react";
+import { FileScan, Loader2, ServerCrash, Lightbulb, CheckCircle2, Target, Info, ArrowDownCircle, Clock, Calendar, Gavel, TrendingUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { FileUploadCard } from "@/components/file-upload-card";
 
@@ -46,21 +45,19 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 }
 
 function getRiskColor(level: string) {
-  switch(level) {
-    case 'baixo': return 'bg-green-50 text-green-700 border-green-200';
-    case 'médio': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-    case 'alto': return 'bg-red-50 text-red-700 border-red-200';
-    default: return 'bg-gray-50 text-gray-700';
-  }
+  const l = level.toLowerCase();
+  if (l.includes('baixo')) return 'bg-green-50 text-green-700 border-green-200';
+  if (l.includes('médio')) return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+  if (l.includes('alto')) return 'bg-red-50 text-red-700 border-red-200';
+  return 'bg-gray-50 text-gray-700';
 }
 
 function getSeverityBadge(severity: string) {
-  switch(severity) {
-    case 'baixa': return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Leve</Badge>;
-    case 'média': return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Atenção</Badge>;
-    case 'alta': return <Badge variant="destructive" className="font-bold">Urgente</Badge>;
-    default: return <Badge variant="outline">{severity}</Badge>;
-  }
+  const s = severity.toLowerCase();
+  if (s.includes('baixa')) return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Leve</Badge>;
+  if (s.includes('média')) return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Atenção</Badge>;
+  if (s.includes('alta')) return <Badge variant="destructive" className="font-bold">Urgente</Badge>;
+  return <Badge variant="outline">{severity}</Badge>;
 }
 
 export default function CnisAnalyzerPage() {
@@ -86,7 +83,7 @@ export default function CnisAnalyzerPage() {
       <header className="text-center space-y-4">
         <h1 className="text-3xl md:text-4xl font-black text-primary">Análise do seu CNIS</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Envie o PDF do seu CNIS (extrato de contribuições) e nós explicaremos tudo de forma simples.
+          Envie o PDF do seu CNIS e o Nelson calculará seu tempo de contribuição e identificará pendências.
         </p>
       </header>
 
@@ -124,151 +121,179 @@ export default function CnisAnalyzerPage() {
 
       {state.data && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-          <div className="flex items-center gap-3 text-2xl font-bold text-primary px-2">
-            <ArrowDownCircle className="animate-bounce" />
-            Veja o que encontramos:
-          </div>
-
-          {/* Resumo Visual */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className={`border-2 shadow-sm ${getRiskColor(state.data.riskLevel)}`}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-bold uppercase opacity-70">Risco de Problemas</CardTitle>
+          
+          {/* Dashboard de Resumo Rápido */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="border-2 shadow-sm bg-primary/5 border-primary/10">
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-xs font-bold uppercase opacity-60 flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Tempo Total
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-black capitalize">{state.data.riskLevel}</p>
+              <CardContent className="p-4 pt-0">
+                <p className="text-xl font-black text-primary leading-tight">{state.data.tempoContribuicaoTotal || "Não identificado"}</p>
               </CardContent>
             </Card>
-            
+
             <Card className="border-2 shadow-sm bg-blue-50 border-blue-100">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-bold uppercase text-blue-700 opacity-70">Qualidade dos Dados</CardTitle>
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-xs font-bold uppercase text-blue-700 opacity-60 flex items-center gap-1">
+                  <Calendar className="w-3 h-3" /> Carência
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4">
-                  <p className="text-3xl font-black text-blue-700">{state.data.qualityScore}%</p>
-                  <div className="flex-1 h-3 bg-blue-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-blue-600 rounded-full transition-all duration-1000" 
-                      style={{width: `${state.data.qualityScore}%`}}
-                    />
-                  </div>
-                </div>
+              <CardContent className="p-4 pt-0">
+                <p className="text-xl font-black text-blue-700">{state.data.carenciaTotal || 0} meses</p>
               </CardContent>
             </Card>
 
-            <Card className="border-2 shadow-sm bg-purple-50 border-purple-100">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-bold uppercase text-purple-700 opacity-70">Pendências</CardTitle>
+            <Card className={`border-2 shadow-sm ${getRiskColor(state.data.riskLevel)}`}>
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-xs font-bold uppercase opacity-60 flex items-center gap-1">
+                  <Target className="w-3 h-3" /> Nível de Risco
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-black text-purple-700">{state.data.pendencies.length}</p>
+              <CardContent className="p-4 pt-0">
+                <p className="text-xl font-black capitalize">{state.data.riskLevel}</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 shadow-sm bg-orange-50 border-orange-100">
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-xs font-bold uppercase text-orange-700 opacity-60 flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" /> Qualidade
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <p className="text-xl font-black text-orange-700">{state.data.qualityScore}%</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Relatório Principal */}
-          <Card className="border-2 shadow-lg">
-            <CardHeader className="bg-muted/30 border-b">
-              <CardTitle className="flex items-center gap-3 text-2xl">
-                <FileScan className="w-7 h-7 text-primary" /> Relatório Simplificado
-              </CardTitle>
+          {/* Card de Progresso da Aposentadoria */}
+          <Card className="border-2 shadow-lg bg-gradient-to-br from-primary/5 to-background">
+            <CardHeader className="pb-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <CardTitle className="text-2xl font-black flex items-center gap-2">
+                            <Target className="w-6 h-6 text-primary" /> Seu Progresso
+                        </CardTitle>
+                        <CardDescription className="text-base font-medium">
+                            {state.data.estimativaAposentadoria}
+                        </CardDescription>
+                    </div>
+                    <div className="text-right">
+                        <span className="text-4xl font-black text-primary">{state.data.progressoAposentadoria}%</span>
+                        <p className="text-xs font-bold uppercase opacity-60">Concluído</p>
+                    </div>
+                </div>
             </CardHeader>
-            <CardContent className="p-0">
-              <Tabs defaultValue="resumo" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-none">
-                  <TabsTrigger value="resumo" className="py-4 text-base font-bold">O Resumo</TabsTrigger>
-                  <TabsTrigger value="pendencias" className="py-4 text-base font-bold">Problemas ({state.data.pendencies.length})</TabsTrigger>
-                  <TabsTrigger value="recomendacoes" className="py-4 text-base font-bold">Dicas</TabsTrigger>
-                  <TabsTrigger value="proximos" className="py-4 text-base font-bold">O que fazer?</TabsTrigger>
-                </TabsList>
+            <CardContent>
+                <div className="w-full h-6 bg-primary/10 rounded-full overflow-hidden border-2 border-primary/5 p-1">
+                    <div 
+                        className="h-full bg-primary rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(var(--primary),0.5)]" 
+                        style={{width: `${state.data.progressoAposentadoria}%`}}
+                    />
+                </div>
+            </CardContent>
+          </Card>
 
-                <div className="p-6 md:p-8">
-                    {/* Aba Resumo */}
-                    <TabsContent value="resumo" className="mt-0 space-y-6">
-                      <div className="bg-primary/5 p-6 rounded-2xl border-2 border-primary/10">
-                        <h3 className="text-xl font-bold flex items-center gap-2 mb-4 text-primary">
-                            <Lightbulb className="w-6 h-6" /> Entenda sua situação:
-                        </h3>
-                        <p className="text-lg leading-relaxed text-foreground/80 whitespace-pre-wrap">
-                          {state.data.summary}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-xl border border-yellow-100 text-yellow-800">
-                        <Info className="w-5 h-5 flex-shrink-0" />
-                        <p className="text-sm font-medium">Status Atual: <strong>{state.data.contributionStatus}</strong></p>
-                      </div>
-                    </TabsContent>
+          {/* Relatório Detalhado */}
+          <Card className="border-2 shadow-lg overflow-hidden">
+            <Tabs defaultValue="resumo" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-none border-b">
+                <TabsTrigger value="resumo" className="py-4 text-base font-bold">O Resumo</TabsTrigger>
+                <TabsTrigger value="pendencias" className="py-4 text-base font-bold">Problemas ({state.data.pendencies.length})</TabsTrigger>
+                <TabsTrigger value="recomendacoes" className="py-4 text-base font-bold">Dicas</TabsTrigger>
+                <TabsTrigger value="proximos" className="py-4 text-base font-bold">O que fazer?</TabsTrigger>
+              </TabsList>
 
-                    {/* Aba Pendências */}
-                    <TabsContent value="pendencias" className="mt-0 space-y-6">
-                      {state.data.pendencies.length > 0 ? (
-                        <div className="space-y-4">
-                          {state.data.pendencies.map((p, index) => (
-                            <div key={index} className="border-2 rounded-2xl p-6 hover:border-primary/30 transition-colors bg-white shadow-sm">
-                                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <Badge className="text-sm px-3 py-1">{p.indicator}</Badge>
-                                        {getSeverityBadge(p.severity)}
-                                    </div>
-                                    <span className="text-sm text-muted-foreground font-medium italic">
-                                        {p.relatedPeriods.join(', ')}
-                                    </span>
-                                </div>
-                                <h4 className="text-lg font-bold mb-2">{p.description}</h4>
-                                <div className="bg-muted/30 p-4 rounded-xl mt-4 border-l-4 border-primary">
-                                    <p className="text-base font-semibold text-primary mb-1">Ação Recomendada:</p>
-                                    <p className="text-base">{p.recommendedAction}</p>
-                                </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-12 bg-green-50 rounded-3xl border-2 border-green-100">
-                          <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                          <h3 className="text-2xl font-bold text-green-800">Tudo em ordem!</h3>
-                          <p className="text-lg text-green-700 max-w-md mx-auto">
-                            Não encontramos problemas graves no seu CNIS. Suas contribuições parecem estar corretas.
-                          </p>
-                        </div>
-                      )}
-                    </TabsContent>
+              <div className="p-6 md:p-8">
+                  {/* Aba Resumo */}
+                  <TabsContent value="resumo" className="mt-0 space-y-6">
+                    <div className="bg-white p-8 rounded-3xl border-2 border-primary/10 shadow-sm">
+                      <h3 className="text-2xl font-black flex items-center gap-3 mb-6 text-primary">
+                          <Lightbulb className="w-8 h-8" /> Entenda sua situação:
+                      </h3>
+                      <p className="text-xl leading-relaxed text-foreground/80 whitespace-pre-wrap font-medium">
+                        {state.data.summary}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 p-5 bg-yellow-50 rounded-2xl border-2 border-yellow-100 text-yellow-800">
+                      <Info className="w-6 h-6 flex-shrink-0" />
+                      <p className="text-lg font-bold italic leading-tight">Status Atual: <span className="underline decoration-yellow-400">{state.data.contributionStatus}</span></p>
+                    </div>
+                  </TabsContent>
 
-                    {/* Aba Recomendações */}
-                    <TabsContent value="recomendacoes" className="mt-0 space-y-4">
-                      {state.data.recommendations.map((rec, index) => (
-                        <div key={index} className="flex gap-4 p-5 bg-blue-50/50 rounded-2xl border-2 border-blue-100">
-                          <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold">
-                            {index + 1}
-                          </div>
-                          <p className="text-lg text-blue-900 leading-snug font-medium">{rec}</p>
-                        </div>
-                      ))}
-                    </TabsContent>
-
-                    {/* Aba Próximos Passos */}
-                    <TabsContent value="proximos" className="mt-0 space-y-4">
-                      <div className="grid gap-4">
-                        {state.data.nextSteps.map((step, index) => (
-                          <div key={index} className="flex items-center gap-5 p-6 border-2 rounded-2xl bg-white hover:bg-muted/20 transition-all group">
-                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                              <Target className="w-6 h-6" />
-                            </div>
-                            <p className="text-lg font-bold text-foreground/90">{step}</p>
+                  {/* Aba Pendências */}
+                  <TabsContent value="pendencias" className="mt-0 space-y-6">
+                    {state.data.pendencies.length > 0 ? (
+                      <div className="space-y-4">
+                        {state.data.pendencies.map((p: any, index: number) => (
+                          <div key={index} className="border-2 rounded-2xl p-6 hover:border-primary/30 transition-all bg-white shadow-sm group">
+                              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                                  <div className="flex items-center gap-2">
+                                      <Badge className="text-sm px-3 py-1 font-bold">{p.indicator}</Badge>
+                                      {getSeverityBadge(p.severity)}
+                                  </div>
+                                  <span className="text-sm text-muted-foreground font-bold flex items-center gap-1">
+                                      <Calendar className="w-4 h-4" /> {p.relatedPeriods.join(', ')}
+                                  </span>
+                              </div>
+                              <h4 className="text-xl font-black mb-3 group-hover:text-primary transition-colors">{p.description}</h4>
+                              <div className="bg-muted/30 p-5 rounded-2xl mt-4 border-l-8 border-primary">
+                                  <p className="text-sm font-black text-primary uppercase tracking-wider mb-2">Ação Recomendada:</p>
+                                  <p className="text-lg font-medium leading-snug">{p.recommendedAction}</p>
+                              </div>
                           </div>
                         ))}
                       </div>
-                      <Alert className="mt-8 bg-primary/5 border-primary/20 p-6 rounded-2xl">
-                        <Gavel className="w-6 h-6 text-primary" />
-                        <AlertTitle className="text-lg font-bold mb-2">Dica para Advogados</AlertTitle>
-                        <AlertDescription className="text-base">
-                          Utilize o <strong>Gerador de Petições</strong> no menu lateral para criar um requerimento de acerto de CNIS fundamentado com base nestas pendências.
+                    ) : (
+                      <div className="text-center py-16 bg-green-50 rounded-[3rem] border-4 border-dashed border-green-200">
+                        <CheckCircle2 className="h-24 w-24 text-green-500 mx-auto mb-6" />
+                        <h3 className="text-3xl font-black text-green-800 mb-2">Tudo em ordem!</h3>
+                        <p className="text-xl text-green-700 max-w-md mx-auto font-medium">
+                          Não encontramos problemas graves no seu CNIS. Suas contribuições parecem estar corretas.
+                        </p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Aba Recomendações */}
+                  <TabsContent value="recomendacoes" className="mt-0 space-y-4">
+                    {state.data.recommendations.map((rec: string, index: number) => (
+                      <div key={index} className="flex gap-5 p-6 bg-blue-50/50 rounded-2xl border-2 border-blue-100 items-start">
+                        <div className="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-black text-xl shadow-md">
+                          {index + 1}
+                        </div>
+                        <p className="text-xl text-blue-900 leading-snug font-bold">{rec}</p>
+                      </div>
+                    ))}
+                  </TabsContent>
+
+                  {/* Aba Próximos Passos */}
+                  <TabsContent value="proximos" className="mt-0 space-y-6">
+                    <div className="grid gap-4">
+                      {state.data.nextSteps.map((step: string, index: number) => (
+                        <div key={index} className="flex items-center gap-6 p-6 border-2 rounded-2xl bg-white hover:bg-primary/5 hover:border-primary/30 transition-all group cursor-default">
+                          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
+                            <Target className="w-8 h-8" />
+                          </div>
+                          <p className="text-xl font-black text-foreground/90">{step}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <Alert className="mt-10 bg-primary/5 border-primary/20 p-8 rounded-3xl">
+                      <Gavel className="w-8 h-8 text-primary" />
+                      <div className="ml-4">
+                        <AlertTitle className="text-xl font-black mb-3 text-primary">Dica Profissional</AlertTitle>
+                        <AlertDescription className="text-lg font-medium leading-relaxed">
+                          Para advogados: Utilize o <strong>Gerador de Petições</strong> no menu lateral para criar um requerimento de acerto de CNIS fundamentado com base nestas pendências.
                         </AlertDescription>
-                      </Alert>
-                    </TabsContent>
-                </div>
-              </Tabs>
-            </CardContent>
+                      </div>
+                    </Alert>
+                  </TabsContent>
+              </div>
+            </Tabs>
           </Card>
         </div>
       )}
