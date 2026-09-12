@@ -56,7 +56,7 @@ export function AppSidebar() {
         group: "Conta",
         items: [
             { href: "/dashboard/profile", label: "Meu Perfil", icon: UserCircle },
-            { href: "#", label: "Ajuda & Suporte", icon: HelpCircle },
+            { href: "/dashboard/support", label: "Ajuda & Suporte", icon: HelpCircle },
         ]
     }
   ];
