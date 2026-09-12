@@ -13,7 +13,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileScan, Loader2, ServerCrash, Lightbulb, CheckCircle2, Target, Info, ArrowDownCircle, Clock, Calendar, Gavel, TrendingUp } from "lucide-react";
+import { FileScan, Loader2, ServerCrash, Lightbulb, CheckCircle2, Target, Info, ArrowDownCircle, Clock, Calendar, Gavel, TrendingUp, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { FileUploadCard } from "@/components/file-upload-card";
 
@@ -96,8 +96,44 @@ export default function CnisAnalyzerPage() {
     }
   }, [state]);
 
+  const downloadReport = () => {
+    if (!state.data) return;
+    const report = [
+      "RELATÓRIO DE ANÁLISE DO CNIS",
+      "================================",
+      `Tempo total estimado: ${state.data.tempoContribuicaoTotal || "Não identificado"}`,
+      `Carência estimada: ${state.data.carenciaTotal || 0} meses`,
+      `Nível de risco: ${state.data.riskLevel || "Não identificado"}`,
+      `Qualidade dos dados: ${state.data.qualityScore ?? "Não identificada"}%`,
+      `Progresso estimado: ${state.data.progressoAposentadoria ?? 0}%`,
+      `Estimativa: ${state.data.estimativaAposentadoria || "Não identificada"}`,
+      "",
+      "RESUMO",
+      state.data.summary || "",
+      "",
+      "PENDÊNCIAS",
+      ...(state.data.pendencies?.length ? state.data.pendencies.map((p: any) => `- [${p.indicator}] ${p.description}\n  Ação: ${p.recommendedAction}`) : ["Nenhuma pendência identificada."]),
+      "",
+      "RECOMENDAÇÕES",
+      ...(state.data.recommendations || []).map((item: string) => `- ${item}`),
+      "",
+      "PRÓXIMOS PASSOS",
+      ...(state.data.nextSteps || []).map((item: string) => `- ${item}`),
+      "",
+      "Aviso: esta análise é uma estimativa informativa e não substitui a avaliação de um profissional previdenciário.",
+    ].join("\n");
+    const url = URL.createObjectURL(new Blob([report], { type: "text/plain;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "relatorio-cnis-nelson-ia.txt";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-20">
+      {!state.data && (
+        <>
       <header className="text-center space-y-4">
         <h1 className="text-3xl md:text-4xl font-black text-primary">Análise do seu CNIS</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -127,8 +163,10 @@ export default function CnisAnalyzerPage() {
           </CardFooter>
         </form>
       </Card>
+        </>
+      )}
 
-      {state.message && ((!state.data) || (state.errors && Object.keys(state.errors).length > 0)) && (
+      {state.message && !state.data && state.errors && Object.keys(state.errors).length > 0 && (
          <Alert variant="destructive" className="border-2">
           <ServerCrash className="h-5 w-5" />
           <AlertTitle className="text-lg font-bold">Não conseguimos analisar</AlertTitle>
@@ -140,6 +178,16 @@ export default function CnisAnalyzerPage() {
 
       {state.data && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-6">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-widest text-primary">Análise concluída</p>
+              <h1 className="text-3xl md:text-4xl font-black text-primary">Relatório do seu CNIS</h1>
+              <p className="text-muted-foreground mt-1">Confira os resultados estimados e salve uma cópia se desejar.</p>
+            </div>
+            <Button type="button" onClick={downloadReport} size="lg" className="font-bold shadow-md">
+              <Download className="mr-2 h-5 w-5" /> Baixar análise
+            </Button>
+          </div>
           
           {/* Dashboard de Resumo Rápido */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
