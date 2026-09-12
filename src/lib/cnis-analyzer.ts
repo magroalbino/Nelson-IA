@@ -46,7 +46,10 @@ function unique(values: string[]) {
 }
 
 export async function extractCnisFacts(pdf: Buffer): Promise<CnisFacts> {
-  const { default: pdfParse } = await import("pdf-parse");
+  // Importa o núcleo diretamente. O index.js do pdf-parse@1.1.1 executa
+  // um arquivo de teste local quando empacotado como módulo serverless.
+  const pdfModule = await import("pdf-parse/lib/pdf-parse.js");
+  const pdfParse = (pdfModule.default || pdfModule) as unknown as (buffer: Buffer) => Promise<{ text: string; numpages: number }>;
   const parsed = await pdfParse(pdf);
   const text = parsed.text.replace(/\r/g, "\n").replace(/[ \t]+/g, " ").trim();
   const competencies = unique([...text.matchAll(MONTH_RE)].map((m) => `${m[1]}/${m[2]}`));
