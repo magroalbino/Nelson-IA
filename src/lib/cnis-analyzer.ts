@@ -129,18 +129,33 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
   const apiKey = process.env.GOOGLE_GENAI_API_KEY;
   if (!apiKey) throw new Error("A variável GOOGLE_GENAI_API_KEY não está configurada no servidor.");
   const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-2.5-flash-lite";
   const metrics = calculateCnisMetrics(facts);
   const prompt = `Você é um analista previdenciário. Analise os fatos extraídos de um CNIS e retorne SOMENTE JSON válido, sem markdown. Não invente dados: deixe claro quando algo for estimativa.\n\nFATOS: ${JSON.stringify({ ...facts, text: facts.text.slice(0, 50000), ...metrics })}\n\nRetorne exatamente estes campos: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal (número), estimativaAposentadoria, progressoAposentadoria (0-100), pendencies (array com indicator, description, recommendedAction, relatedPeriods, severity), summary, recommendations (array), nextSteps (array). Os cálculos de carência, tempo e progresso devem respeitar os valores determinísticos fornecidos; não trate a estimativa como aconselhamento jurídico.`;
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } }),
-  });
-  if (!response.ok) {
-    const details = await response.text();
-    console.error(`[GEMINI] HTTP ${response.status}:`, details);
-    throw new Error(`A API Gemini respondeu com HTTP ${response.status}. Verifique GEMINI_MODEL e a chave da API.`);
+  const payload = JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } });
+  let response: Response | undefined;
+  let lastStatus = 0;
+  for (const candidate of [...new Set([model, fallbackModel])]) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(candidate)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      });
+      if (response.ok) break;
+      lastStatus = response.status;
+      const details = await response.text();
+      console.error(`[GEMINI] modelo=${candidate} tentativa=${attempt + 1} HTTP ${response.status}:`, details);
+      if (![429, 500, 502, 503, 504].includes(response.status)) break;
+      if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 700));
+    }
+    if (response?.ok) break;
+  }
+  if (!response?.ok) {
+    if (lastStatus === 429) throw new Error("A API Gemini atingiu o limite temporário de solicitações. Aguarde alguns segundos e tente novamente.");
+    if ([500, 502, 503, 504].includes(lastStatus)) throw new Error("A API Gemini está temporariamente indisponível. Tente novamente em alguns segundos.");
+    throw new Error(`A API Gemini respondeu com HTTP ${lastStatus}. Verifique GEMINI_MODEL e a chave da API.`);
   }
   const body = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
   const raw = body.candidates?.[0]?.content?.parts?.[0]?.text;
