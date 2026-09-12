@@ -98,6 +98,7 @@ export default function CnisAnalyzerPage() {
                 name="cnisDocument"
                 onFileSelect={handleFileSelect}
                 acceptedFileTypes={["application/pdf"]}
+                maxSizeMB={25}
              />
               {state.errors?.cnisDocument && (
                 <p className="text-lg text-destructive font-bold text-center mt-4">{state.errors.cnisDocument[0]}</p>

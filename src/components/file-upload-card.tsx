@@ -24,7 +24,10 @@ export function FileUploadCard({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (file: File) => {
-    if (acceptedFileTypes.length > 0 && !acceptedFileTypes.includes(file.type)) {
+    const extension = file.name.toLowerCase().split('.').pop();
+    const mimeLooksUnknown = !file.type || file.type === 'application/octet-stream';
+    const acceptedByExtension = extension === 'pdf' && acceptedFileTypes.includes('application/pdf');
+    if (acceptedFileTypes.length > 0 && !acceptedFileTypes.includes(file.type) && !(mimeLooksUnknown && acceptedByExtension)) {
       toast({
         title: "Arquivo inválido",
         description: "Por favor, selecione um arquivo no formato permitido (PDF ou Word).",

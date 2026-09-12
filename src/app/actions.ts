@@ -79,12 +79,14 @@ export async function analyzeCnisAction(prevState: CnisState, formData: FormData
 
     try {
         const file = validatedFields.data.cnisDocument;
-        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-        if (!isPdf) throw new Error('Envie o CNIS em formato PDF.');
         if (file.size === 0) throw new Error('O arquivo enviado está vazio.');
         if (file.size > 25 * 1024 * 1024) throw new Error('O PDF deve ter no máximo 25 MB.');
 
         const bytes = Buffer.from(await file.arrayBuffer());
+        // O MIME type pode chegar vazio ou como application/octet-stream na Vercel.
+        // A assinatura `%PDF-` é a validação confiável do formato real.
+        const isPdf = bytes.subarray(0, 5).toString('ascii') === '%PDF-';
+        if (!isPdf) throw new Error('O arquivo enviado não parece ser um PDF válido.');
         const result = await analyzeCnisPdf(bytes);
         return {
             message: 'Análise do CNIS concluída!',
