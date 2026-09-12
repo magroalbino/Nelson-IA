@@ -3,8 +3,6 @@ import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import pdfParse from "pdf-parse";
-import { createWorker } from "tesseract.js";
 import { z } from "zod";
 
 const execFileAsync = promisify(execFile);
@@ -48,6 +46,7 @@ function unique(values: string[]) {
 }
 
 export async function extractCnisFacts(pdf: Buffer): Promise<CnisFacts> {
+  const { default: pdfParse } = await import("pdf-parse");
   const parsed = await pdfParse(pdf);
   const text = parsed.text.replace(/\r/g, "\n").replace(/[ \t]+/g, " ").trim();
   const competencies = unique([...text.matchAll(MONTH_RE)].map((m) => `${m[1]}/${m[2]}`));
@@ -87,6 +86,7 @@ async function ocrPdf(pdf: Buffer): Promise<string> {
     await execFileAsync("pdftoppm", ["-jpeg", "-r", "160", "-f", "1", "-l", "20", pdfPath, join(workdir, "page")]);
     const images = (await readdir(workdir)).filter((name) => name.endsWith(".jpg")).sort();
     if (!images.length) throw new Error("Não foi possível converter as páginas do PDF para OCR.");
+    const { createWorker } = await import("tesseract.js");
     const worker = await createWorker("por");
     try {
       const chunks: string[] = [];
