@@ -46,6 +46,7 @@
     "firebase": "^11.9.1",
     "framer-motion": "^11.2.10",
     "genkit": "^1.19.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.475.0",
     "next": "latest",
     "next-themes": "^0.3.0",

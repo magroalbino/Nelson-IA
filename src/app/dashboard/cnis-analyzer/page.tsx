@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -98,36 +99,62 @@ export default function CnisAnalyzerPage() {
 
   const downloadReport = () => {
     if (!state.data) return;
-    const report = [
-      "RELATÓRIO DE ANÁLISE DO CNIS",
-      "================================",
-      `Tempo total estimado: ${state.data.tempoContribuicaoTotal || "Não identificado"}`,
-      `Carência estimada: ${state.data.carenciaTotal || 0} meses`,
-      `Nível de risco: ${state.data.riskLevel || "Não identificado"}`,
-      `Qualidade dos dados: ${state.data.qualityScore ?? "Não identificada"}%`,
-      `Progresso estimado: ${state.data.progressoAposentadoria ?? 0}%`,
-      `Estimativa: ${state.data.estimativaAposentadoria || "Não identificada"}`,
-      "",
-      "RESUMO",
-      state.data.summary || "",
-      "",
-      "PENDÊNCIAS",
-      ...(state.data.pendencies?.length ? state.data.pendencies.map((p: any) => `- [${p.indicator}] ${p.description}\n  Ação: ${p.recommendedAction}`) : ["Nenhuma pendência identificada."]),
-      "",
-      "RECOMENDAÇÕES",
-      ...(state.data.recommendations || []).map((item: string) => `- ${item}`),
-      "",
-      "PRÓXIMOS PASSOS",
-      ...(state.data.nextSteps || []).map((item: string) => `- ${item}`),
-      "",
-      "Aviso: esta análise é uma estimativa informativa e não substitui a avaliação de um profissional previdenciário.",
-    ].join("\n");
-    const url = URL.createObjectURL(new Blob([report], { type: "text/plain;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "relatorio-cnis-nelson-ia.txt";
-    link.click();
-    URL.revokeObjectURL(url);
+    const pdf = new jsPDF({ unit: "mm", format: "a4" });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 17;
+    let y = 20;
+    const blue = [37, 99, 235] as [number, number, number];
+    const navy = [15, 23, 42] as [number, number, number];
+    const slate = [71, 85, 105] as [number, number, number];
+    const ensureSpace = (height: number) => {
+      if (y + height > pageHeight - 18) { pdf.addPage(); y = 20; }
+    };
+    const sectionTitle = (title: string) => {
+      ensureSpace(14);
+      pdf.setFillColor(...blue); pdf.roundedRect(margin, y - 5, 3, 8, 1, 1, "F");
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(13); pdf.setTextColor(...navy);
+      pdf.text(title, margin + 8, y + 1); y += 12;
+    };
+    const paragraph = (text: string, size = 10.5) => {
+      const lines = pdf.splitTextToSize(text || "Não informado.", pageWidth - margin * 2);
+      ensureSpace(lines.length * 5 + 4);
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(size); pdf.setTextColor(...slate);
+      pdf.text(lines, margin, y); y += lines.length * 5 + 5;
+    };
+    const card = (x: number, top: number, width: number, label: string, value: string, color: [number, number, number]) => {
+      pdf.setFillColor(248, 250, 252); pdf.setDrawColor(226, 232, 240); pdf.roundedRect(x, top, width, 28, 3, 3, "FD");
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(...slate); pdf.text(label.toUpperCase(), x + 5, top + 8);
+      pdf.setFontSize(11); pdf.setTextColor(...color); pdf.text(pdf.splitTextToSize(value, width - 10).slice(0, 2), x + 5, top + 17);
+    };
+
+    pdf.setFillColor(...navy); pdf.rect(0, 0, pageWidth, 52, "F");
+    pdf.setTextColor(255, 255, 255); pdf.setFont("helvetica", "bold"); pdf.setFontSize(22); pdf.text("Nelson IA", margin, 20);
+    pdf.setFontSize(16); pdf.text("Relatório de análise do CNIS", margin, 33);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(191, 219, 254); pdf.text("Análise informativa e estimativa previdenciária", margin, 43);
+    y = 68;
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(12); pdf.setTextColor(...navy); pdf.text("Resumo rápido", margin, y); y += 8;
+    const gap = 4; const cardWidth = (pageWidth - margin * 2 - gap * 3) / 4;
+    card(margin, y, cardWidth, "Tempo total", state.data.tempoContribuicaoTotal || "Não identificado", blue);
+    card(margin + cardWidth + gap, y, cardWidth, "Carência", `${state.data.carenciaTotal || 0} meses`, [14, 116, 144]);
+    card(margin + (cardWidth + gap) * 2, y, cardWidth, "Risco", state.data.riskLevel || "Não identificado", [217, 119, 6]);
+    card(margin + (cardWidth + gap) * 3, y, cardWidth, "Qualidade", `${state.data.qualityScore ?? "—"}%`, [5, 150, 105]);
+    y += 40;
+    sectionTitle("Progresso para aposentadoria");
+    paragraph(state.data.estimativaAposentadoria || "Estimativa não identificada.");
+    const progress = Math.max(0, Math.min(100, Number(state.data.progressoAposentadoria) || 0));
+    pdf.setFillColor(226, 232, 240); pdf.roundedRect(margin, y, pageWidth - margin * 2, 7, 3, 3, "F");
+    pdf.setFillColor(...blue); pdf.roundedRect(margin, y, (pageWidth - margin * 2) * progress / 100, 7, 3, 3, "F");
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(...blue); pdf.text(`${progress}% concluído`, margin, y + 14); y += 24;
+    sectionTitle("Resumo da análise"); paragraph(state.data.summary);
+    sectionTitle("Pendências identificadas");
+    if (state.data.pendencies?.length) state.data.pendencies.forEach((p: any) => { paragraph(`[${p.indicator || "Atenção"}] ${p.description}`, 10.5); paragraph(`Ação recomendada: ${p.recommendedAction}`, 9.5); });
+    else paragraph("Nenhuma pendência relevante foi identificada no documento.");
+    sectionTitle("Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    sectionTitle("Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    ensureSpace(18); pdf.setFont("helvetica", "italic"); pdf.setFontSize(8); pdf.setTextColor(...slate);
+    pdf.text("Aviso: esta análise é uma estimativa informativa e não substitui a avaliação de um profissional previdenciário.", margin, y);
+    pdf.save("relatorio-cnis-nelson-ia.pdf");
   };
 
   return (
