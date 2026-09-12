@@ -1,8 +1,6 @@
 "use client";
 
-import React, { useActionState, useEffect, useState } from "react";
-import { useFormStatus } from "react-dom";
-import { analyzeCnisAction } from "@/app/actions";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,8 +23,7 @@ const initialState = {
   data: null,
 };
 
-function SubmitButton({ disabled }: { disabled: boolean }) {
-  const { pending } = useFormStatus();
+function SubmitButton({ disabled, pending }: { disabled: boolean; pending: boolean }) {
   return (
     <Button type="submit" disabled={pending || disabled} size="lg" className="h-16 px-8 text-xl font-bold shadow-lg">
       {pending ? (
@@ -61,11 +58,31 @@ function getSeverityBadge(severity: string) {
 }
 
 export default function CnisAnalyzerPage() {
-  const [state, formAction] = useActionState(analyzeCnisAction, initialState);
+  const [state, setState] = useState<any>(initialState);
   const [cnisDocument, setCnisDocument] = useState<File | null>(null);
+  const [pending, setPending] = useState(false);
 
   const handleFileSelect = (file: File | null) => {
     setCnisDocument(file);
+    setState(initialState);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!cnisDocument || pending) return;
+    setPending(true);
+    setState(initialState);
+    try {
+      const formData = new FormData();
+      formData.append("cnisDocument", cnisDocument, cnisDocument.name);
+      const response = await fetch("/api/analyze-cnis", { method: "POST", body: formData });
+      const result = await response.json();
+      setState({ message: result.message, data: response.ok ? result.data : null, errors: response.ok ? {} : { cnisDocument: [result.message] } });
+    } catch {
+      setState({ message: "Não foi possível conectar ao servidor de análise.", data: null, errors: { cnisDocument: ["Erro de conexão"] } });
+    } finally {
+      setPending(false);
+    }
   };
   
   useEffect(() => {
@@ -92,7 +109,7 @@ export default function CnisAnalyzerPage() {
             <Info className="w-5 h-5 text-primary" />
             <span className="text-sm font-medium text-primary/80 uppercase tracking-wider">Passo Único</span>
         </div>
-        <form action={formAction}>
+        <form onSubmit={handleSubmit}>
           <CardContent className="pt-8">
              <FileUploadCard 
                 name="cnisDocument"
@@ -105,7 +122,7 @@ export default function CnisAnalyzerPage() {
               )}
           </CardContent>
           <CardFooter className="flex justify-center pb-8">
-            <SubmitButton disabled={!cnisDocument} />
+            <SubmitButton disabled={!cnisDocument} pending={pending} />
           </CardFooter>
         </form>
       </Card>
