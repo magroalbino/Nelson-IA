@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { generateLegalPetition } from "@/ai/flows/generate-legal-petition";
-import { analyzeCnisPendencies } from "@/ai/flows/analyze-cnis-pendencies";
+import { analyzeCnisPdf } from "@/lib/cnis-analyzer";
 
 // Schema for Legal Petition Generation
 const petitionSchema = z.object({
@@ -56,18 +56,18 @@ export async function generatePetitionAction(
 
 // Schema for CNIS Analysis
 const cnisSchema = z.object({
-    cnisDocumentUri: z.string().min(1, 'O upload do documento CNIS é obrigatório.'),
+    cnisDocument: z.instanceof(File, { message: 'O upload do documento CNIS é obrigatório.' }),
 });
 
 interface CnisState {
-    errors?: { cnisDocumentUri?: string[] };
+    errors?: { cnisDocument?: string[] };
     message?: string | null;
     data?: any | null;
 }
 
 export async function analyzeCnisAction(prevState: CnisState, formData: FormData): Promise<CnisState> {
     const validatedFields = cnisSchema.safeParse({
-        cnisDocumentUri: formData.get("cnisDocumentUri"),
+        cnisDocument: formData.get("cnisDocument"),
     });
 
     if (!validatedFields.success) {
@@ -78,7 +78,14 @@ export async function analyzeCnisAction(prevState: CnisState, formData: FormData
     }
 
     try {
-        const result = await analyzeCnisPendencies({ cnisDocumentUri: validatedFields.data.cnisDocumentUri });
+        const file = validatedFields.data.cnisDocument;
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        if (!isPdf) throw new Error('Envie o CNIS em formato PDF.');
+        if (file.size === 0) throw new Error('O arquivo enviado está vazio.');
+        if (file.size > 25 * 1024 * 1024) throw new Error('O PDF deve ter no máximo 25 MB.');
+
+        const bytes = Buffer.from(await file.arrayBuffer());
+        const result = await analyzeCnisPdf(bytes);
         return {
             message: 'Análise do CNIS concluída!',
             data: result,

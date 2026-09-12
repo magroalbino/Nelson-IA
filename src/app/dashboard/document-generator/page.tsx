@@ -100,7 +100,8 @@ export default function DocumentGeneratorPage() {
                     Envie o CNIS, PPP ou Laudo em formato PDF ou Word (.doc, .docx).
                 </p>
                 <FileUploadCard 
-                    onFileSelect={(_, dataUri) => setDocumentUri(dataUri)} 
+                    name="document"
+                    onFileSelect={(_, dataUri) => setDocumentUri(dataUri || "")}
                     acceptedFileTypes={["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]} 
                 />
             </div>

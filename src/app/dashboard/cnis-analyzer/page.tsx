@@ -62,10 +62,10 @@ function getSeverityBadge(severity: string) {
 
 export default function CnisAnalyzerPage() {
   const [state, formAction] = useActionState(analyzeCnisAction, initialState);
-  const [cnisDocumentUri, setCnisDocumentUri] = useState("");
+  const [cnisDocument, setCnisDocument] = useState<File | null>(null);
 
-  const handleFileSelect = (file: File | null, dataUri: string) => {
-    setCnisDocumentUri(dataUri);
+  const handleFileSelect = (file: File | null) => {
+    setCnisDocument(file);
   };
   
   useEffect(() => {
@@ -94,17 +94,17 @@ export default function CnisAnalyzerPage() {
         </div>
         <form action={formAction}>
           <CardContent className="pt-8">
-             <input type="hidden" name="cnisDocumentUri" value={cnisDocumentUri} />
              <FileUploadCard 
+                name="cnisDocument"
                 onFileSelect={handleFileSelect}
-                acceptedFileTypes={["application/pdf", "image/jpeg", "image/png"]}
+                acceptedFileTypes={["application/pdf"]}
              />
-              {state.errors?.cnisDocumentUri && (
-                <p className="text-lg text-destructive font-bold text-center mt-4">{state.errors.cnisDocumentUri[0]}</p>
+              {state.errors?.cnisDocument && (
+                <p className="text-lg text-destructive font-bold text-center mt-4">{state.errors.cnisDocument[0]}</p>
               )}
           </CardContent>
           <CardFooter className="flex justify-center pb-8">
-            <SubmitButton disabled={!cnisDocumentUri} />
+            <SubmitButton disabled={!cnisDocument} />
           </CardFooter>
         </form>
       </Card>

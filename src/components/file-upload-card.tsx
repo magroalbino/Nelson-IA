@@ -7,13 +7,15 @@ import { UploadCloud, FileText, X, CheckCircle2, AlertCircle } from 'lucide-reac
 import { toast } from '@/hooks/use-toast';
 
 interface FileUploadCardProps {
-  onFileSelect: (file: File | null, dataUri: string) => void;
+  onFileSelect: (file: File | null, dataUri?: string) => void;
+  name?: string;
   acceptedFileTypes?: string[];
   maxSizeMB?: number;
 }
 
 export function FileUploadCard({ 
   onFileSelect, 
+  name = "document",
   acceptedFileTypes = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
   maxSizeMB = 10 
 }: FileUploadCardProps) {
@@ -41,10 +43,9 @@ export function FileUploadCard({
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUri = e.target?.result as string;
+    reader.onload = (event) => {
       setSelectedFile(file);
-      onFileSelect(file, dataUri);
+      onFileSelect(file, event.target?.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -74,6 +75,7 @@ export function FileUploadCard({
     >
       <input 
         type="file" 
+        name={name}
         ref={fileInputRef}
         className="hidden" 
         onChange={(e) => e.target.files && handleFile(e.target.files[0])}
