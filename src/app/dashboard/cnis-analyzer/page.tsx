@@ -87,10 +87,11 @@ export default function CnisAnalyzerPage() {
   
   useEffect(() => {
     if (state.message) {
+      const hasErrors = Boolean(state.errors && Object.keys(state.errors).length > 0);
       toast({
-        title: state.errors || !state.data ? "Ops!" : "Sucesso!",
+        title: hasErrors || !state.data ? "Ops!" : "Sucesso!",
         description: state.message,
-        variant: state.errors || !state.data ? "destructive" : "default",
+        variant: hasErrors || !state.data ? "destructive" : "default",
       });
     }
   }, [state]);
@@ -127,7 +128,7 @@ export default function CnisAnalyzerPage() {
         </form>
       </Card>
 
-      {state.message && (state.errors || !state.data) && (
+      {state.message && ((!state.data) || (state.errors && Object.keys(state.errors).length > 0)) && (
          <Alert variant="destructive" className="border-2">
           <ServerCrash className="h-5 w-5" />
           <AlertTitle className="text-lg font-bold">Não conseguimos analisar</AlertTitle>
