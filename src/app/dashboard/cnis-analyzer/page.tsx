@@ -136,7 +136,7 @@ export default function CnisAnalyzerPage() {
     pdf.setFont("helvetica", "bold"); pdf.setFontSize(12); pdf.setTextColor(...navy); pdf.text("Resumo rápido", margin, y); y += 8;
     const gap = 4; const cardWidth = (pageWidth - margin * 2 - gap * 3) / 4;
     card(margin, y, cardWidth, "Tempo total", state.data.tempoContribuicaoTotal || "Não identificado", blue);
-    card(margin + cardWidth + gap, y, cardWidth, "Carência", `${state.data.carenciaTotal || 0} meses`, [14, 116, 144]);
+    card(margin + cardWidth + gap, y, cardWidth, "Competências identificadas", `${state.data.competenciasIdentificadas ?? state.data.carenciaTotal ?? 0} meses`, [14, 116, 144]);
     card(margin + (cardWidth + gap) * 2, y, cardWidth, "Risco", state.data.riskLevel || "Não identificado", [217, 119, 6]);
     card(margin + (cardWidth + gap) * 3, y, cardWidth, "Qualidade", `${state.data.qualityScore ?? "—"}%`, [5, 150, 105]);
     y += 40;
@@ -231,12 +231,13 @@ export default function CnisAnalyzerPage() {
 
             <Card className="border-2 shadow-sm bg-blue-50 border-blue-100">
               <CardHeader className="pb-2 p-4">
-                <CardTitle className="text-xs font-bold uppercase text-blue-700 opacity-60 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> Carência
+                  <CardTitle className="text-xs font-bold uppercase text-blue-700 opacity-60 flex items-center gap-1">
+                    <Calendar className="w-3 h-3" /> Competências identificadas
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <p className="text-xl font-black text-blue-700">{state.data.carenciaTotal || 0} meses</p>
+                <p className="text-xl font-black text-blue-700">{state.data.competenciasIdentificadas ?? state.data.carenciaTotal ?? 0} meses</p>
+                <p className="mt-1 text-xs text-blue-700/70">Contagem preliminar no texto</p>
               </CardContent>
             </Card>
 

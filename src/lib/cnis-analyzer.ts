@@ -1,11 +1,13 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
+import { calculateCnisMetrics as calculateDeterministicMetrics, detectOverlaps, type CnisPeriod } from "@/lib/cnis-metrics";
 
 const execFileAsync = promisify(execFile);
+const execFileWithInput = execFileAsync as unknown as (file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>;
 
 export const CnisAnalysisSchema = z.object({
   qualityScore: z.number().min(0).max(100),
@@ -13,6 +15,8 @@ export const CnisAnalysisSchema = z.object({
   contributionStatus: z.string(),
   tempoContribuicaoTotal: z.string(),
   carenciaTotal: z.number().nonnegative(),
+  competenciasIdentificadas: z.number().nonnegative().optional(),
+  calculationBasis: z.string().optional(),
   estimativaAposentadoria: z.string(),
   progressoAposentadoria: z.number().min(0).max(100),
   pendencies: z.array(z.object({
@@ -29,83 +33,138 @@ export const CnisAnalysisSchema = z.object({
 
 export type CnisAnalysis = z.infer<typeof CnisAnalysisSchema>;
 
+export type CnisEvidence = {
+  page: number;
+  excerpt: string;
+  kind: "competency" | "indicator" | "period" | "text";
+};
+
 export type CnisFacts = {
   text: string;
   pages: number;
+  pageTexts: string[];
   competencies: string[];
   indicators: string[];
-  periods: Array<{ start: string; end: string; source: string }>;
+  periods: CnisPeriod[];
+  evidence: CnisEvidence[];
   extractedByOcr: boolean;
 };
 
-const INDICATOR_RE = /\b(?:PEXT|AEXT|PREC-MENOR-MIN|IREC-LC123|IREC-MEI|PSC-MEN-SM|ACRÉSCIMO|EXTEMP|PEN|INDPEND|SAL-MIN)\b/gi;
-const MONTH_RE = /\b(\d{2})\/(\d{4})\b/g;
+const INDICATOR_RE = /\b(?:PEXT|AEXT(?:-VI)?|PREC-MENOR-MIN|IREC-LC123|IREC-MEI|PSC-MEN-SM|ACRÉSCIMO|EXTEMP|PEN|INDPEND|SAL-MIN)\b/gi;
+const MONTH_RE = /\b(0[1-9]|1[0-2])\/(19|20)\d{2}\b/g;
 
-function unique(values: string[]) {
+type PdfPage = {
+  getTextContent: (options: { normalizeWhitespace: boolean; disableCombineTextItems: boolean }) => Promise<{
+    items: Array<{ str?: string; transform?: number[] }>;
+  }>;
+};
+
+type PdfParseOptions = {
+  pagerender?: (page: PdfPage) => Promise<string>;
+};
+
+type PdfParseResult = { text: string; numpages: number };
+
+function normalizeText(text: string): string {
+  return text.replace(/\r/g, "\n").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function unique(values: string[]): string[] {
   return [...new Set(values)];
 }
 
-export async function extractCnisFacts(pdf: Buffer): Promise<CnisFacts> {
-  // Importa o núcleo diretamente. O index.js do pdf-parse@1.1.1 executa
-  // um arquivo de teste local quando empacotado como módulo serverless.
-  const pdfModule = await import("pdf-parse/lib/pdf-parse.js");
-  const pdfParse = (pdfModule.default || pdfModule) as unknown as (buffer: Buffer) => Promise<{ text: string; numpages: number }>;
-  const parsed = await pdfParse(pdf);
-  const text = parsed.text.replace(/\r/g, "\n").replace(/[ \t]+/g, " ").trim();
-  const competencies = unique([...text.matchAll(MONTH_RE)].map((m) => `${m[1]}/${m[2]}`));
-  const indicators = unique([...text.matchAll(INDICATOR_RE)].map((m) => m[0].toUpperCase()));
-
-  if (text.length >= 250) {
-    return { text, pages: parsed.numpages, competencies, indicators, periods: inferPeriods(text), extractedByOcr: false };
+async function renderPdfPage(page: PdfPage): Promise<string> {
+  const content = await page.getTextContent({ normalizeWhitespace: true, disableCombineTextItems: false });
+  let lastY: number | undefined;
+  let text = "";
+  for (const item of content.items) {
+    const value = item.str || "";
+    const currentY = item.transform?.[5];
+    if (text && currentY !== undefined && lastY !== undefined && currentY !== lastY) text += "\n";
+    text += value;
+    if (currentY !== undefined) lastY = currentY;
   }
-
-  const ocrText = await ocrPdf(pdf);
-  const combined = ocrText.replace(/\r/g, "\n").replace(/[ \t]+/g, " ").trim();
-  return {
-    text: combined,
-    pages: parsed.numpages,
-    competencies: unique([...combined.matchAll(MONTH_RE)].map((m) => `${m[1]}/${m[2]}`)),
-    indicators: unique([...combined.matchAll(INDICATOR_RE)].map((m) => m[0].toUpperCase())),
-    periods: inferPeriods(combined),
-    extractedByOcr: true,
-  };
+  return normalizeText(text);
 }
 
-function inferPeriods(text: string) {
-  const periods: Array<{ start: string; end: string; source: string }> = [];
-  const lines = text.split("\n");
-  for (const line of lines) {
-    const dates = [...line.matchAll(MONTH_RE)].map((m) => `${m[1]}/${m[2]}`);
-    if (dates.length >= 2) periods.push({ start: dates[0], end: dates[1], source: line.slice(0, 180) });
+function findEvidence(pageTexts: string[], competencies: string[], indicators: string[], periods: CnisPeriod[]): CnisEvidence[] {
+  const evidence: CnisEvidence[] = [];
+  for (let index = 0; index < pageTexts.length; index += 1) {
+    const page = pageTexts[index];
+    for (const competency of competencies) {
+      if (page.includes(competency)) evidence.push({ page: index + 1, excerpt: page.slice(Math.max(0, page.indexOf(competency) - 90), page.indexOf(competency) + competency.length + 120), kind: "competency" });
+    }
+    for (const indicator of indicators) {
+      const indicatorIndex = page.toUpperCase().indexOf(indicator.toUpperCase());
+      if (indicatorIndex >= 0) evidence.push({ page: index + 1, excerpt: page.slice(Math.max(0, indicatorIndex - 90), indicatorIndex + indicator.length + 120), kind: "indicator" });
+    }
+  }
+  for (const period of periods) {
+    if (period.page) evidence.push({ page: period.page, excerpt: period.source, kind: "period" });
+  }
+  return evidence.slice(0, 1000);
+}
+
+export async function extractCnisFacts(pdf: Buffer): Promise<CnisFacts> {
+  const pdfModule = await import("pdf-parse/lib/pdf-parse.js");
+  const pdfParse = (pdfModule.default || pdfModule) as unknown as (buffer: Buffer, options?: PdfParseOptions) => Promise<PdfParseResult>;
+  const parsedPages: string[] = [];
+  const parsed = await pdfParse(pdf, {
+    pagerender: async (page) => {
+      const text = await renderPdfPage(page);
+      parsedPages.push(text);
+      return text;
+    },
+  });
+  const textPages = parsedPages.length ? parsedPages : [normalizeText(parsed.text)];
+  const text = normalizeText(textPages.join("\n\n"));
+  const competencies = unique([...text.matchAll(MONTH_RE)].map((match) => `${match[1]}/${match[2]}`));
+  const indicators = unique([...text.matchAll(INDICATOR_RE)].map((match) => match[0].toUpperCase()));
+
+  if (text.length >= 250) {
+    const periods = inferPeriods(textPages);
+    return { text, pages: parsed.numpages, pageTexts: textPages, competencies, indicators, periods, evidence: findEvidence(textPages, competencies, indicators, periods), extractedByOcr: false };
+  }
+
+  const ocrPages = await ocrPdf(pdf);
+  const ocrText = normalizeText(ocrPages.join("\n\n"));
+  const ocrCompetencies = unique([...ocrText.matchAll(MONTH_RE)].map((match) => `${match[1]}/${match[2]}`));
+  const ocrIndicators = unique([...ocrText.matchAll(INDICATOR_RE)].map((match) => match[0].toUpperCase()));
+  const periods = inferPeriods(ocrPages);
+  return { text: ocrText, pages: parsed.numpages, pageTexts: ocrPages, competencies: ocrCompetencies, indicators: ocrIndicators, periods, evidence: findEvidence(ocrPages, ocrCompetencies, ocrIndicators, periods), extractedByOcr: true };
+}
+
+function inferPeriods(pageTexts: string[]): CnisPeriod[] {
+  const periods: CnisPeriod[] = [];
+  for (let pageIndex = 0; pageIndex < pageTexts.length; pageIndex += 1) {
+    for (const line of pageTexts[pageIndex].split("\n")) {
+      const dates = [...line.matchAll(MONTH_RE)].map((match) => `${match[1]}/${match[2]}`);
+      if (dates.length >= 2) periods.push({ start: dates[0], end: dates[1], source: line.slice(0, 180), page: pageIndex + 1 });
+    }
   }
   return periods.slice(0, 500);
 }
 
-async function ocrPdf(pdf: Buffer): Promise<string> {
+async function ocrPdf(pdf: Buffer): Promise<string[]> {
   const workdir = await mkdtemp(join(tmpdir(), "nelson-cnis-"));
   const pdfPath = join(workdir, "document.pdf");
   try {
-    await (await import("node:fs/promises")).writeFile(pdfPath, pdf);
-    await execFileAsync("pdftoppm", ["-jpeg", "-r", "160", "-f", "1", "-l", "20", pdfPath, join(workdir, "page")]);
+    await writeFile(pdfPath, pdf);
+    await execFileWithInput("pdftoppm", ["-jpeg", "-r", "160", "-f", "1", "-l", "20", pdfPath, join(workdir, "page")]);
     const images = (await readdir(workdir)).filter((name) => name.endsWith(".jpg")).sort();
     if (!images.length) throw new Error("Não foi possível converter as páginas do PDF para OCR.");
     const { createWorker } = await import("tesseract.js");
     const worker = await createWorker("por");
     try {
-      const chunks: string[] = [];
-      for (const image of images) {
-        const result = await worker.recognize(await readFile(join(workdir, image)));
-        chunks.push(result.data.text);
-      }
-      return chunks.join("\n");
+      const pages: string[] = [];
+      for (const image of images) pages.push(normalizeText((await worker.recognize(await readFile(join(workdir, image)))).data.text));
+      return pages;
     } finally {
       await worker.terminate();
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "erro desconhecido";
-    if (message.includes("pdftoppm") || message.includes("ENOENT")) {
-      throw new Error("O PDF não possui texto selecionável e o OCR não está disponível neste servidor.");
-    }
+    if (message.includes("pdftoppm") || message.includes("ENOENT")) throw new Error("O PDF não possui texto selecionável e o OCR não está disponível neste servidor.");
     throw new Error(`Falha ao executar OCR: ${message}`);
   } finally {
     await rm(workdir, { recursive: true, force: true });
@@ -113,16 +172,7 @@ async function ocrPdf(pdf: Buffer): Promise<string> {
 }
 
 export function calculateCnisMetrics(facts: CnisFacts) {
-  const months = unique(facts.competencies).length;
-  const years = Math.floor(months / 12);
-  const remainder = months % 12;
-  const progress = Math.min(100, Math.round((months / (35 * 12)) * 100));
-  return {
-    carenciaTotal: months,
-    tempoContribuicaoTotal: `${years} anos e ${remainder} meses (estimativa por competências identificadas)`,
-    progressoAposentadoria: progress,
-    indicatorsCount: facts.indicators.length,
-  };
+  return calculateDeterministicMetrics(facts.competencies, facts.indicators.length);
 }
 
 export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAnalysis> {
@@ -131,18 +181,15 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
   const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
   const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-2.5-flash-lite";
   const metrics = calculateCnisMetrics(facts);
-  const prompt = `Você é um analista previdenciário. Analise os fatos extraídos de um CNIS e retorne SOMENTE JSON válido, sem markdown. Não invente dados: deixe claro quando algo for estimativa.\n\nFATOS: ${JSON.stringify({ ...facts, text: facts.text.slice(0, 50000), ...metrics })}\n\nRetorne exatamente estes campos: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal (número), estimativaAposentadoria, progressoAposentadoria (0-100), pendencies (array com indicator, description, recommendedAction, relatedPeriods, severity), summary, recommendations (array), nextSteps (array). Os cálculos de carência, tempo e progresso devem respeitar os valores determinísticos fornecidos; não trate a estimativa como aconselhamento jurídico.`;
+  const overlaps = detectOverlaps(facts.periods);
+  const prompt = `Você é um analista previdenciário. Analise os fatos extraídos de um CNIS e retorne SOMENTE JSON válido, sem markdown. Não invente dados: deixe claro quando algo for estimativa ou hipótese. Classifique pendências como DADO, ALERTA ou HIPÓTESE dentro da descrição quando aplicável.\n\nFATOS: ${JSON.stringify({ ...facts, text: facts.text.slice(0, 50000), evidence: facts.evidence.slice(0, 250), overlaps: overlaps.length, ...metrics })}\n\nRetorne exatamente estes campos: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal (número), competenciasIdentificadas, calculationBasis, estimativaAposentadoria, progressoAposentadoria (0-100), pendencies (array com indicator, description, recommendedAction, relatedPeriods, severity), summary, recommendations (array), nextSteps (array). Os cálculos de carência, tempo e progresso devem respeitar os valores determinísticos fornecidos; não trate a estimativa como aconselhamento jurídico.`;
 
   const payload = JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } });
   let response: Response | undefined;
   let lastStatus = 0;
   for (const candidate of [...new Set([model, fallbackModel])]) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(candidate)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: payload,
-      });
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(candidate)}:generateContent?key=${encodeURIComponent(apiKey)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload });
       if (response.ok) break;
       lastStatus = response.status;
       const details = await response.text();
