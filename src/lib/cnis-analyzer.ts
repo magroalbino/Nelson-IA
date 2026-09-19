@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
 import { calculateCnisMetrics as calculateDeterministicMetrics, detectOverlaps, type CnisPeriod } from "@/lib/cnis-metrics";
+import { structureCnis, type StructuredCnis } from "@/lib/cnis-structured";
 
 const execFileAsync = promisify(execFile);
 const execFileWithInput = execFileAsync as unknown as (file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>;
@@ -47,11 +48,12 @@ export type CnisFacts = {
   indicators: string[];
   periods: CnisPeriod[];
   evidence: CnisEvidence[];
+  structured: StructuredCnis;
   extractedByOcr: boolean;
 };
 
 const INDICATOR_RE = /\b(?:PEXT|AEXT(?:-VI)?|PREC-MENOR-MIN|IREC-LC123|IREC-MEI|PSC-MEN-SM|ACRÉSCIMO|EXTEMP|PEN|INDPEND|SAL-MIN)\b/gi;
-const MONTH_RE = /\b(0[1-9]|1[0-2])\/(19|20)\d{2}\b/g;
+const MONTH_RE = /\b(0[1-9]|1[0-2])\/((?:19|20)\d{2})\b/g;
 
 type PdfPage = {
   getTextContent: (options: { normalizeWhitespace: boolean; disableCombineTextItems: boolean }) => Promise<{
@@ -118,20 +120,22 @@ export async function extractCnisFacts(pdf: Buffer): Promise<CnisFacts> {
   });
   const textPages = parsedPages.length ? parsedPages : [normalizeText(parsed.text)];
   const text = normalizeText(textPages.join("\n\n"));
+  const structured = structureCnis(textPages);
   const competencies = unique([...text.matchAll(MONTH_RE)].map((match) => `${match[1]}/${match[2]}`));
   const indicators = unique([...text.matchAll(INDICATOR_RE)].map((match) => match[0].toUpperCase()));
 
   if (text.length >= 250) {
     const periods = inferPeriods(textPages);
-    return { text, pages: parsed.numpages, pageTexts: textPages, competencies, indicators, periods, evidence: findEvidence(textPages, competencies, indicators, periods), extractedByOcr: false };
+    return { text, pages: parsed.numpages, pageTexts: textPages, competencies, indicators, periods, evidence: findEvidence(textPages, competencies, indicators, periods), structured, extractedByOcr: false };
   }
 
   const ocrPages = await ocrPdf(pdf);
   const ocrText = normalizeText(ocrPages.join("\n\n"));
+  const ocrStructured = structureCnis(ocrPages);
   const ocrCompetencies = unique([...ocrText.matchAll(MONTH_RE)].map((match) => `${match[1]}/${match[2]}`));
   const ocrIndicators = unique([...ocrText.matchAll(INDICATOR_RE)].map((match) => match[0].toUpperCase()));
   const periods = inferPeriods(ocrPages);
-  return { text: ocrText, pages: parsed.numpages, pageTexts: ocrPages, competencies: ocrCompetencies, indicators: ocrIndicators, periods, evidence: findEvidence(ocrPages, ocrCompetencies, ocrIndicators, periods), extractedByOcr: true };
+  return { text: ocrText, pages: parsed.numpages, pageTexts: ocrPages, competencies: ocrCompetencies, indicators: ocrIndicators, periods, evidence: findEvidence(ocrPages, ocrCompetencies, ocrIndicators, periods), structured: ocrStructured, extractedByOcr: true };
 }
 
 function inferPeriods(pageTexts: string[]): CnisPeriod[] {
