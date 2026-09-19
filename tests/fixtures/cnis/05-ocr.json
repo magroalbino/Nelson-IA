@@ -1,0 +1,28 @@
+{
+  "id": "05-ocr",
+  "title": "CNIS sintético escaneado para fallback OCR",
+  "type": "image_pdf",
+  "purpose": "Garantir que um PDF sem camada de texto acione o OCR.",
+  "expected": {
+    "text_min": 80,
+    "ocr": true,
+    "competencies_include": [
+      "02/2021",
+      "05/2021"
+    ],
+    "indicators_include": [
+      "PEXT"
+    ],
+    "periods": [
+      {
+        "start": "02/2021",
+        "end": "01/2023",
+        "page": 1
+      }
+    ],
+    "expected_alerts": [
+      "INDICADOR"
+    ]
+  },
+  "pdf": "05-ocr.pdf"
+}

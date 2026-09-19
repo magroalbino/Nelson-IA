@@ -1,0 +1,19 @@
+{
+  "id": "06-incompleto",
+  "title": "CNIS sintético incompleto e insuficiente",
+  "type": "text_pdf",
+  "purpose": "Verificar que o sistema admite insuficiência em vez de inventar dados.",
+  "expected": {
+    "text_min": 80,
+    "ocr": false,
+    "competencies_include": [
+      "07/2022"
+    ],
+    "indicators_include": [],
+    "periods": [],
+    "expected_alerts": [
+      "DADOS_INSUFICIENTES"
+    ]
+  },
+  "pdf": "06-incompleto.pdf"
+}

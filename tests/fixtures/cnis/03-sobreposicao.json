@@ -1,0 +1,31 @@
+{
+  "id": "03-sobreposicao",
+  "title": "CNIS sintético com períodos sobrepostos",
+  "type": "text_pdf",
+  "purpose": "Detecção futura de sobreposição entre dois vínculos.",
+  "expected": {
+    "text_min": 250,
+    "ocr": false,
+    "competencies_include": [
+      "01/2019",
+      "12/2021"
+    ],
+    "indicators_include": [],
+    "periods": [
+      {
+        "start": "01/2019",
+        "end": "08/2020",
+        "page": 1
+      },
+      {
+        "start": "06/2020",
+        "end": "12/2021",
+        "page": 1
+      }
+    ],
+    "expected_alerts": [
+      "SOBREPOSICAO"
+    ]
+  },
+  "pdf": "03-sobreposicao.pdf"
+}

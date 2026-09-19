@@ -1,0 +1,33 @@
+{
+  "id": "02-lacuna",
+  "title": "CNIS sintético com lacuna entre vínculos",
+  "type": "text_pdf",
+  "purpose": "Detecção futura de intervalo sem vínculo entre períodos.",
+  "expected": {
+    "text_min": 250,
+    "ocr": false,
+    "competencies_include": [
+      "01/2015",
+      "06/2017",
+      "09/2017",
+      "12/2019"
+    ],
+    "indicators_include": [],
+    "periods": [
+      {
+        "start": "01/2015",
+        "end": "06/2017",
+        "page": 1
+      },
+      {
+        "start": "09/2017",
+        "end": "12/2019",
+        "page": 1
+      }
+    ],
+    "expected_alerts": [
+      "LACUNA"
+    ]
+  },
+  "pdf": "02-lacuna.pdf"
+}

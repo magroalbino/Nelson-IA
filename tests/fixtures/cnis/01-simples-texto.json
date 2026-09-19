@@ -1,0 +1,24 @@
+{
+  "id": "01-simples-texto",
+  "title": "CNIS sintético simples com vínculo contínuo",
+  "type": "text_pdf",
+  "purpose": "Fluxo textual básico com um vínculo sem lacuna aparente.",
+  "expected": {
+    "text_min": 250,
+    "ocr": false,
+    "competencies_include": [
+      "01/2018",
+      "12/2020"
+    ],
+    "indicators_include": [],
+    "periods": [
+      {
+        "start": "01/2018",
+        "end": "12/2020",
+        "page": 1
+      }
+    ],
+    "expected_alerts": []
+  },
+  "pdf": "01-simples-texto.pdf"
+}

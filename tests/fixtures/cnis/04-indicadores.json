@@ -1,0 +1,32 @@
+{
+  "id": "04-indicadores",
+  "title": "CNIS sintético com indicadores de atenção",
+  "type": "text_pdf",
+  "purpose": "Verificação de captura de indicadores e geração de alerta, sem afirmar impacto jurídico.",
+  "expected": {
+    "text_min": 250,
+    "ocr": false,
+    "competencies_include": [
+      "03/2010",
+      "04/2010",
+      "05/2010",
+      "02/2012"
+    ],
+    "indicators_include": [
+      "PEXT",
+      "AEXT-VI",
+      "IREC-LC123"
+    ],
+    "periods": [
+      {
+        "start": "03/2010",
+        "end": "02/2012",
+        "page": 1
+      }
+    ],
+    "expected_alerts": [
+      "INDICADOR"
+    ]
+  },
+  "pdf": "04-indicadores.pdf"
+}
