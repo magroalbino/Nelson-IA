@@ -122,6 +122,14 @@ export default function CnisAnalyzerPage() {
       pdf.setFont("helvetica", "normal"); pdf.setFontSize(size); pdf.setTextColor(...slate);
       pdf.text(lines, margin, y); y += lines.length * 5 + 5;
     };
+    const callout = (title: string, text: string, fill: [number, number, number], accent: [number, number, number]) => {
+      const lines = pdf.splitTextToSize(text || "Não informado.", pageWidth - margin * 2 - 18);
+      ensureSpace(lines.length * 5 + 22);
+      pdf.setFillColor(...fill); pdf.roundedRect(margin, y - 5, pageWidth - margin * 2, lines.length * 5 + 17, 3, 3, "F");
+      pdf.setFillColor(...accent); pdf.roundedRect(margin, y - 5, 3, lines.length * 5 + 17, 1.5, 1.5, "F");
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); pdf.setTextColor(...navy); pdf.text(title, margin + 10, y + 3);
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(10.5); pdf.setTextColor(...slate); pdf.text(lines, margin + 10, y + 11); y += lines.length * 5 + 22;
+    };
     const card = (x: number, top: number, width: number, label: string, value: string, color: [number, number, number]) => {
       pdf.setFillColor(248, 250, 252); pdf.setDrawColor(226, 232, 240); pdf.roundedRect(x, top, width, 28, 3, 3, "FD");
       pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(...slate); pdf.text(label.toUpperCase(), x + 5, top + 8);
@@ -131,29 +139,35 @@ export default function CnisAnalyzerPage() {
     pdf.setFillColor(...navy); pdf.rect(0, 0, pageWidth, 52, "F");
     pdf.setTextColor(255, 255, 255); pdf.setFont("helvetica", "bold"); pdf.setFontSize(22); pdf.text("Nelson IA", margin, 20);
     pdf.setFontSize(16); pdf.text("Relatório de análise do CNIS", margin, 33);
-    pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(191, 219, 254); pdf.text("Análise informativa e estimativa previdenciária", margin, 43);
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); pdf.setTextColor(191, 219, 254); pdf.text("Um resumo simples para ajudar você a entender seu CNIS", margin, 43);
     y = 68;
-    pdf.setFont("helvetica", "bold"); pdf.setFontSize(12); pdf.setTextColor(...navy); pdf.text("Resumo rápido", margin, y); y += 8;
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(13); pdf.setTextColor(...navy); pdf.text("1. Visão geral", margin, y); y += 8;
     const gap = 4; const cardWidth = (pageWidth - margin * 2 - gap * 3) / 4;
     card(margin, y, cardWidth, "Tempo total", state.data.tempoContribuicaoTotal || "Não identificado", blue);
     card(margin + cardWidth + gap, y, cardWidth, "Competências identificadas", `${state.data.competenciasIdentificadas ?? state.data.carenciaTotal ?? 0} meses`, [14, 116, 144]);
     card(margin + (cardWidth + gap) * 2, y, cardWidth, "Pontos para conferir", `${(state.data.auditFindings || []).filter((item: any) => item.kind !== "DADO").length}`, [217, 119, 6]);
     card(margin + (cardWidth + gap) * 3, y, cardWidth, "Indicadores encontrados", `${state.data.auditFindings?.filter((item: any) => item.code === "INDICADOR_IDENTIFICADO").length || 0}`, [5, 150, 105]);
     y += 40;
-    sectionTitle("Progresso para aposentadoria");
-    paragraph(state.data.estimativaAposentadoria || "Estimativa não identificada.");
+    sectionTitle("Estimativa inicial");
+    callout("O que esta análise consegue dizer", state.data.estimativaAposentadoria || "Não foi possível determinar uma estimativa com os dados disponíveis.", [239, 246, 255], blue);
+    paragraph("Este resultado é uma estimativa baseada no texto identificado no documento. Ele não confirma, sozinho, direito à aposentadoria.", 10);
     const progress = Math.max(0, Math.min(100, Number(state.data.progressoAposentadoria) || 0));
     pdf.setFillColor(226, 232, 240); pdf.roundedRect(margin, y, pageWidth - margin * 2, 7, 3, 3, "F");
     pdf.setFillColor(...blue); pdf.roundedRect(margin, y, (pageWidth - margin * 2) * progress / 100, 7, 3, 3, "F");
     pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(...blue); pdf.text(`${progress}% concluído`, margin, y + 14); y += 24;
-    sectionTitle("Resumo da análise"); paragraph(state.data.summary);
-    sectionTitle("Pendências identificadas");
-    if (state.data.pendencies?.length) state.data.pendencies.forEach((p: any) => { paragraph(`[${p.indicator || "Atenção"}] ${p.description}`, 10.5); paragraph(`Ação recomendada: ${p.recommendedAction}`, 9.5); });
-    else paragraph("Nenhuma pendência relevante foi identificada no documento.");
-    sectionTitle("Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
-    sectionTitle("Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
-    ensureSpace(18); pdf.setFont("helvetica", "italic"); pdf.setFontSize(8); pdf.setTextColor(...slate);
-    pdf.text("Aviso: esta análise é uma estimativa informativa e não substitui a avaliação de um profissional previdenciário.", margin, y);
+    sectionTitle("2. Entenda sua situação"); callout("Resumo em linguagem simples", state.data.summary, [248, 250, 252], blue);
+    sectionTitle("3. O que foi encontrado");
+    paragraph(`Foram identificadas ${state.data.competenciasIdentificadas ?? state.data.carenciaTotal ?? 0} competências no texto do documento e ${state.data.auditFindings?.filter((item: any) => item.code === "VINCULO_IDENTIFICADO").length || 0} vínculo(s) estruturado(s).`, 11);
+    (state.data.auditFindings || []).filter((item: any) => item.kind === "DADO").slice(0, 8).forEach((item: any) => paragraph(`• ${item.description} (página ${item.source?.page || "não identificada"})`, 10));
+    sectionTitle("4. Pontos para conferir");
+    const auditAlerts = (state.data.auditFindings || []).filter((item: any) => item.kind !== "DADO");
+    if (auditAlerts.length) auditAlerts.slice(0, 12).forEach((item: any) => callout(`${item.kind}: ${item.title}`, `${item.description} Ação recomendada: ${item.recommendedAction}`, item.kind === "ALERTA" ? [255, 247, 237] : [254, 242, 242], item.kind === "ALERTA" ? [217, 119, 6] : [220, 38, 38]));
+    else paragraph("Nenhum ponto adicional para conferência foi registrado na leitura automática.");
+    sectionTitle("5. Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    sectionTitle("6. Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    callout("Importante", "Leve este relatório e o CNIS original a um profissional previdenciário. A análise automática pode não identificar todos os detalhes ou documentos necessários.", [254, 242, 242], [220, 38, 38]);
+    ensureSpace(18); pdf.setFont("helvetica", "italic"); pdf.setFontSize(9); pdf.setTextColor(...slate);
+    pdf.text("Nelson IA — relatório informativo, não substitui orientação profissional.", margin, y);
     pdf.save("relatorio-cnis-nelson-ia.pdf");
   };
 
@@ -208,11 +222,11 @@ export default function CnisAnalyzerPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-6">
             <div>
               <p className="text-sm font-bold uppercase tracking-widest text-primary">Análise concluída</p>
-              <h1 className="text-3xl md:text-4xl font-black text-primary">Relatório do seu CNIS</h1>
-              <p className="text-muted-foreground mt-1">Confira os resultados estimados e salve uma cópia se desejar.</p>
+              <h1 className="text-3xl md:text-4xl font-black text-primary">Seu relatório do CNIS</h1>
+              <p className="text-lg text-muted-foreground mt-1">Veja o que foi encontrado, o que precisa ser conferido e quais podem ser os próximos passos.</p>
             </div>
-            <Button type="button" onClick={downloadReport} size="lg" className="font-bold shadow-md">
-              <Download className="mr-2 h-5 w-5" /> Baixar análise
+              <Button type="button" onClick={downloadReport} size="lg" className="font-bold shadow-md">
+              <Download className="mr-2 h-5 w-5" /> Baixar relatório em PDF
             </Button>
           </div>
           
@@ -298,10 +312,10 @@ export default function CnisAnalyzerPage() {
           <Card className="border-2 shadow-lg overflow-hidden">
             <Tabs defaultValue="resumo" className="w-full">
               <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-none border-b">
-                <TabsTrigger value="resumo" className="py-4 text-base font-bold">O Resumo</TabsTrigger>
-                <TabsTrigger value="pendencias" className="py-4 text-base font-bold">Problemas ({state.data.pendencies.length + (state.data.auditFindings?.filter((item: any) => item.kind !== "DADO").length || 0)})</TabsTrigger>
-                <TabsTrigger value="recomendacoes" className="py-4 text-base font-bold">Dicas</TabsTrigger>
-                <TabsTrigger value="proximos" className="py-4 text-base font-bold">O que fazer?</TabsTrigger>
+                <TabsTrigger value="resumo" className="py-4 text-base font-bold">Resumo simples</TabsTrigger>
+                <TabsTrigger value="pendencias" className="py-4 text-base font-bold">Pontos para conferir ({state.data.pendencies.length + (state.data.auditFindings?.filter((item: any) => item.kind !== "DADO").length || 0)})</TabsTrigger>
+                <TabsTrigger value="recomendacoes" className="py-4 text-base font-bold">Recomendações</TabsTrigger>
+                <TabsTrigger value="proximos" className="py-4 text-base font-bold">Próximos passos</TabsTrigger>
               </TabsList>
 
               <div className="p-6 md:p-8">
