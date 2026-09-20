@@ -137,8 +137,8 @@ export default function CnisAnalyzerPage() {
     const gap = 4; const cardWidth = (pageWidth - margin * 2 - gap * 3) / 4;
     card(margin, y, cardWidth, "Tempo total", state.data.tempoContribuicaoTotal || "Não identificado", blue);
     card(margin + cardWidth + gap, y, cardWidth, "Competências identificadas", `${state.data.competenciasIdentificadas ?? state.data.carenciaTotal ?? 0} meses`, [14, 116, 144]);
-    card(margin + (cardWidth + gap) * 2, y, cardWidth, "Risco", state.data.riskLevel || "Não identificado", [217, 119, 6]);
-    card(margin + (cardWidth + gap) * 3, y, cardWidth, "Qualidade", `${state.data.qualityScore ?? "—"}%`, [5, 150, 105]);
+    card(margin + (cardWidth + gap) * 2, y, cardWidth, "Pontos para conferir", `${(state.data.auditFindings || []).filter((item: any) => item.kind !== "DADO").length}`, [217, 119, 6]);
+    card(margin + (cardWidth + gap) * 3, y, cardWidth, "Indicadores encontrados", `${state.data.auditFindings?.filter((item: any) => item.code === "INDICADOR_IDENTIFICADO").length || 0}`, [5, 150, 105]);
     y += 40;
     sectionTitle("Progresso para aposentadoria");
     paragraph(state.data.estimativaAposentadoria || "Estimativa não identificada.");
@@ -241,25 +241,27 @@ export default function CnisAnalyzerPage() {
               </CardContent>
             </Card>
 
-            <Card className={`border-2 shadow-sm ${getRiskColor(state.data.riskLevel)}`}>
+            <Card className="border-2 shadow-sm bg-amber-50 border-amber-100">
               <CardHeader className="pb-2 p-4">
                 <CardTitle className="text-xs font-bold uppercase opacity-60 flex items-center gap-1">
-                  <Target className="w-3 h-3" /> Nível de Risco
+                  <Info className="w-3 h-3" /> Pontos para conferir
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <p className="text-xl font-black capitalize">{state.data.riskLevel}</p>
+                <p className="text-xl font-black text-amber-700">{state.data.auditFindings?.filter((item: any) => item.kind !== "DADO").length || 0}</p>
+                <p className="mt-1 text-xs text-amber-700/70">Alertas e hipóteses da leitura</p>
               </CardContent>
             </Card>
 
-            <Card className="border-2 shadow-sm bg-orange-50 border-orange-100">
+            <Card className="border-2 shadow-sm bg-emerald-50 border-emerald-100">
               <CardHeader className="pb-2 p-4">
-                <CardTitle className="text-xs font-bold uppercase text-orange-700 opacity-60 flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" /> Qualidade
+                <CardTitle className="text-xs font-bold uppercase text-emerald-700 opacity-60 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Indicadores encontrados
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <p className="text-xl font-black text-orange-700">{state.data.qualityScore}%</p>
+                <p className="text-xl font-black text-emerald-700">{state.data.auditFindings?.filter((item: any) => item.code === "INDICADOR_IDENTIFICADO").length || 0}</p>
+                <p className="mt-1 text-xs text-emerald-700/70">Códigos que merecem conferência</p>
               </CardContent>
             </Card>
           </div>

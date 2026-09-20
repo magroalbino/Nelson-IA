@@ -6,7 +6,8 @@ import { promisify } from "node:util";
 import { z } from "zod";
 import { calculateCnisMetrics as calculateDeterministicMetrics, detectOverlaps, type CnisPeriod } from "@/lib/cnis-metrics";
 import { structureCnis, type StructuredCnis } from "@/lib/cnis-structured";
-import { auditStructuredCnis, type AuditFinding } from "@/lib/cnis-audit";
+import { auditStructuredCnis } from "@/lib/cnis-audit";
+import { normalizeEstimate } from "@/lib/cnis-response";
 
 const execFileAsync = promisify(execFile);
 const execFileWithInput = execFileAsync as unknown as (file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>;
@@ -224,7 +225,7 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
   const raw = body.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!raw) throw new Error("A API Gemini não retornou uma análise.");
   const parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, ""));
-  return CnisAnalysisSchema.parse({ ...parsed, ...metrics, auditFindings, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
+  return CnisAnalysisSchema.parse({ ...parsed, estimativaAposentadoria: normalizeEstimate(parsed.estimativaAposentadoria), ...metrics, auditFindings, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
 }
 
 export async function analyzeCnisPdf(pdf: Buffer) {
