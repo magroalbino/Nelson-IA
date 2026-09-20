@@ -297,7 +297,7 @@ export default function CnisAnalyzerPage() {
             <Tabs defaultValue="resumo" className="w-full">
               <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-none border-b">
                 <TabsTrigger value="resumo" className="py-4 text-base font-bold">O Resumo</TabsTrigger>
-                <TabsTrigger value="pendencias" className="py-4 text-base font-bold">Problemas ({state.data.pendencies.length})</TabsTrigger>
+                <TabsTrigger value="pendencias" className="py-4 text-base font-bold">Problemas ({state.data.pendencies.length + (state.data.auditFindings?.filter((item: any) => item.kind !== "DADO").length || 0)})</TabsTrigger>
                 <TabsTrigger value="recomendacoes" className="py-4 text-base font-bold">Dicas</TabsTrigger>
                 <TabsTrigger value="proximos" className="py-4 text-base font-bold">O que fazer?</TabsTrigger>
               </TabsList>
@@ -349,6 +349,23 @@ export default function CnisAnalyzerPage() {
                         <p className="text-xl text-green-700 max-w-md mx-auto font-medium">
                           Não encontramos problemas graves no seu CNIS. Suas contribuições parecem estar corretas.
                         </p>
+                      </div>
+                    )}
+                    {state.data.auditFindings?.length > 0 && (
+                      <div className="mt-6 space-y-3 border-t pt-6">
+                        <h3 className="font-bold text-primary">Auditoria do documento</h3>
+                        {state.data.auditFindings.map((finding: any, index: number) => (
+                          <div key={`${finding.code}-${index}`} className="rounded-lg border bg-muted/20 p-4">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant={finding.kind === "ALERTA" ? "destructive" : "outline"}>{finding.kind}</Badge>
+                              <span className="font-bold">{finding.title}</span>
+                              {getSeverityBadge(finding.severity)}
+                            </div>
+                            <p className="mt-2 text-sm text-muted-foreground">{finding.description}</p>
+                            <p className="mt-2 text-sm font-medium">Próxima ação: {finding.recommendedAction}</p>
+                            {finding.source && <p className="mt-1 text-xs text-muted-foreground">Fonte: página {finding.source.page} — {finding.source.excerpt}</p>}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </TabsContent>

@@ -6,6 +6,7 @@ import { promisify } from "node:util";
 import { z } from "zod";
 import { calculateCnisMetrics as calculateDeterministicMetrics, detectOverlaps, type CnisPeriod } from "@/lib/cnis-metrics";
 import { structureCnis, type StructuredCnis } from "@/lib/cnis-structured";
+import { auditStructuredCnis, type AuditFinding } from "@/lib/cnis-audit";
 
 const execFileAsync = promisify(execFile);
 const execFileWithInput = execFileAsync as unknown as (file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>;
@@ -30,6 +31,16 @@ export const CnisAnalysisSchema = z.object({
   summary: z.string(),
   recommendations: z.array(z.string()),
   nextSteps: z.array(z.string()),
+  auditFindings: z.array(z.object({
+    kind: z.enum(["DADO", "ALERTA", "HIPÓTESE"]),
+    code: z.string(),
+    title: z.string(),
+    description: z.string(),
+    recommendedAction: z.string(),
+    severity: z.enum(["baixa", "média", "alta"]),
+    source: z.object({ page: z.number(), excerpt: z.string() }).optional(),
+    relatedPeriods: z.array(z.string()).optional(),
+  })).default([]),
 });
 
 export type CnisAnalysis = z.infer<typeof CnisAnalysisSchema>;
@@ -186,7 +197,8 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
   const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-2.5-flash-lite";
   const metrics = calculateCnisMetrics(facts);
   const overlaps = detectOverlaps(facts.periods);
-  const prompt = `Você é um analista previdenciário. Analise os fatos extraídos de um CNIS e retorne SOMENTE JSON válido, sem markdown. Não invente dados: deixe claro quando algo for estimativa ou hipótese. Classifique pendências como DADO, ALERTA ou HIPÓTESE dentro da descrição quando aplicável.\n\nFATOS: ${JSON.stringify({ ...facts, text: facts.text.slice(0, 50000), evidence: facts.evidence.slice(0, 250), overlaps: overlaps.length, ...metrics })}\n\nRetorne exatamente estes campos: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal (número), competenciasIdentificadas, calculationBasis, estimativaAposentadoria, progressoAposentadoria (0-100), pendencies (array com indicator, description, recommendedAction, relatedPeriods, severity), summary, recommendations (array), nextSteps (array). Os cálculos de carência, tempo e progresso devem respeitar os valores determinísticos fornecidos; não trate a estimativa como aconselhamento jurídico.`;
+  const auditFindings = auditStructuredCnis(facts.structured, facts.text.length);
+  const prompt = `Você é um analista previdenciário. Analise os fatos extraídos de um CNIS e retorne SOMENTE JSON válido, sem markdown. Não invente dados: deixe claro quando algo for estimativa ou hipótese. Use os achados determinísticos fornecidos como base e não os contradiga.\n\nFATOS: ${JSON.stringify({ ...facts, text: facts.text.slice(0, 50000), evidence: facts.evidence.slice(0, 250), overlaps: overlaps.length, auditFindings, ...metrics })}\n\nRetorne exatamente estes campos: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal (número), competenciasIdentificadas, calculationBasis, estimativaAposentadoria, progressoAposentadoria (0-100), pendencies (array com indicator, description, recommendedAction, relatedPeriods, severity), summary, recommendations (array), nextSteps (array). Os cálculos de carência, tempo e progresso devem respeitar os valores determinísticos fornecidos; não trate a estimativa como aconselhamento jurídico.`;
 
   const payload = JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } });
   let response: Response | undefined;
@@ -212,7 +224,7 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
   const raw = body.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!raw) throw new Error("A API Gemini não retornou uma análise.");
   const parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, ""));
-  return CnisAnalysisSchema.parse({ ...parsed, ...metrics, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
+  return CnisAnalysisSchema.parse({ ...parsed, ...metrics, auditFindings, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
 }
 
 export async function analyzeCnisPdf(pdf: Buffer) {
