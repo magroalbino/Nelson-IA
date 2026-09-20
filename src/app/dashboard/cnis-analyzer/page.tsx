@@ -159,12 +159,15 @@ export default function CnisAnalyzerPage() {
     sectionTitle("3. O que foi encontrado");
     paragraph(`Foram identificadas ${state.data.competenciasIdentificadas ?? state.data.carenciaTotal ?? 0} competências no texto do documento e ${state.data.auditFindings?.filter((item: any) => item.code === "VINCULO_IDENTIFICADO").length || 0} vínculo(s) estruturado(s).`, 11);
     (state.data.auditFindings || []).filter((item: any) => item.kind === "DADO").slice(0, 8).forEach((item: any) => paragraph(`• ${item.description} (página ${item.source?.page || "não identificada"})`, 10));
-    sectionTitle("4. Pontos para conferir");
+    sectionTitle("4. Linha do tempo");
+    if (state.data.timeline?.length) state.data.timeline.slice(0, 20).forEach((event: any) => paragraph(`${event.period} — ${event.title}. ${event.detail}${event.source ? ` Fonte: página ${event.source.page}.` : ""}`, 10));
+    else paragraph("Não foi possível montar uma linha do tempo com os dados identificados.");
+    sectionTitle("5. Pontos para conferir");
     const auditAlerts = (state.data.auditFindings || []).filter((item: any) => item.kind !== "DADO");
     if (auditAlerts.length) auditAlerts.slice(0, 12).forEach((item: any) => callout(`${item.kind}: ${item.title}`, `${item.description} Ação recomendada: ${item.recommendedAction}`, item.kind === "ALERTA" ? [255, 247, 237] : [254, 242, 242], item.kind === "ALERTA" ? [217, 119, 6] : [220, 38, 38]));
     else paragraph("Nenhum ponto adicional para conferência foi registrado na leitura automática.");
-    sectionTitle("5. Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
-    sectionTitle("6. Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    sectionTitle("6. Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    sectionTitle("7. Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
     callout("Importante", "Leve este relatório e o CNIS original a um profissional previdenciário. A análise automática pode não identificar todos os detalhes ou documentos necessários.", [254, 242, 242], [220, 38, 38]);
     ensureSpace(18); pdf.setFont("helvetica", "italic"); pdf.setFontSize(9); pdf.setTextColor(...slate);
     pdf.text("Nelson IA — relatório informativo, não substitui orientação profissional.", margin, y);
@@ -279,6 +282,40 @@ export default function CnisAnalyzerPage() {
               </CardContent>
             </Card>
           </div>
+
+          {state.data.timeline?.length > 0 && (
+            <Card className="border-2 shadow-lg overflow-hidden">
+              <CardHeader className="bg-slate-50 border-b">
+                <CardTitle className="text-2xl font-black flex items-center gap-2 text-primary">
+                  <Calendar className="w-6 h-6" /> Linha do tempo do seu histórico
+                </CardTitle>
+                <CardDescription className="text-base">Períodos e informações localizados no documento, organizados em ordem cronológica.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 md:p-8">
+                <div className="relative space-y-6 before:absolute before:left-[14px] before:top-3 before:h-[calc(100%-24px)] before:w-0.5 before:bg-primary/20">
+                  {state.data.timeline.map((event: any, index: number) => {
+                    const toneClass = event.tone === "red" ? "bg-red-100 text-red-700 border-red-200" : event.tone === "amber" ? "bg-amber-100 text-amber-700 border-amber-200" : event.tone === "green" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : event.tone === "blue" ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-slate-100 text-slate-700 border-slate-200";
+                    return (
+                      <div key={`${event.kind}-${event.period}-${index}`} className="relative flex gap-4 pl-1">
+                        <div className={`z-10 mt-1 h-7 w-7 shrink-0 rounded-full border-4 border-white shadow-sm ${toneClass.split(" ")[0]}`} />
+                        <div className="min-w-0 flex-1 rounded-2xl border-2 bg-white p-4 shadow-sm">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <p className="text-lg font-black text-slate-900">{event.title}</p>
+                              <p className="font-bold text-primary">{event.period}</p>
+                            </div>
+                            <Badge variant="outline" className={toneClass}>{event.kind === "vinculo" ? "Vínculo" : event.kind === "beneficio" ? "Benefício" : event.kind === "competencias" ? "Competências" : event.kind === "indicador" ? "Indicador" : "Atenção"}</Badge>
+                          </div>
+                          <p className="mt-2 text-base leading-relaxed text-muted-foreground">{event.detail}</p>
+                          {event.source && <p className="mt-2 text-xs text-muted-foreground">Fonte: página {event.source.page} — {event.source.excerpt}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Card de Progresso da Aposentadoria */}
           <Card className="border-2 shadow-lg bg-gradient-to-br from-primary/5 to-background">
