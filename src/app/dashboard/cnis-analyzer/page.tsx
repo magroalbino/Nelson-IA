@@ -181,6 +181,8 @@ export default function CnisAnalyzerPage() {
     sectionTitle("2. Entenda sua situação"); callout("Resumo em linguagem simples", state.data.summary, [248, 250, 252], blue);
     sectionTitle("3. O que foi encontrado");
     paragraph(`Foram identificadas ${state.data.competenciasIdentificadas ?? state.data.carenciaTotal ?? 0} competências no texto do documento e ${state.data.auditFindings?.filter((item: any) => item.code === "VINCULO_IDENTIFICADO").length || 0} vínculo(s) estruturado(s).`, 11);
+    paragraph(`A contagem potencial de carência é de ${state.data.carenciaPotencial ?? state.data.carenciaTotal ?? 0} competência(s), mas a carência confirmada automaticamente é ${state.data.carenciaConfirmada ?? 0}. O resultado depende da validação das contribuições e dos indicadores pelo INSS.`, 10);
+    paragraph(`Períodos consolidados: ${state.data.periodMonths ?? 0} mês(es). Lacunas: ${(state.data.gaps || []).length}. Sobreposições: ${(state.data.overlaps || []).length}. Competências fora dos períodos: ${(state.data.competenciesOutsidePeriods || []).length}.`, 10);
     (state.data.auditFindings || []).filter((item: any) => item.kind === "DADO").slice(0, 8).forEach((item: any) => paragraph(`• ${item.description} (página ${item.source?.page || "não identificada"})`, 10));
     sectionTitle("4. Linha do tempo");
     if (state.data.timeline?.length) state.data.timeline.slice(0, 20).forEach((event: any) => paragraph(`${event.period} — ${event.title}. ${event.detail}${event.source ? ` Fonte: página ${event.source.page}.` : ""}`, 10));
@@ -308,6 +310,16 @@ export default function CnisAnalyzerPage() {
               </CardContent>
             </Card>
           </div>
+
+          <Card className="border-2 border-blue-100 bg-blue-50/60 shadow-sm">
+            <CardHeader className="pb-3"><CardTitle className="text-xl font-black text-blue-900">Como interpretar os cálculos</CardTitle><CardDescription className="text-blue-900/70">O sistema calcula a partir do que aparece no PDF e não transforma automaticamente uma competência em carência confirmada.</CardDescription></CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-white/80 p-4"><p className="text-xs font-bold uppercase text-blue-700">Competências identificadas</p><p className="mt-1 text-2xl font-black text-blue-900">{state.data.competenciasIdentificadas ?? 0}</p><p className="text-xs text-blue-900/70">Meses localizados no documento</p></div>
+              <div className="rounded-xl bg-white/80 p-4"><p className="text-xs font-bold uppercase text-amber-700">Carência potencial</p><p className="mt-1 text-2xl font-black text-amber-900">{state.data.carenciaPotencial ?? state.data.carenciaTotal ?? 0}</p><p className="text-xs text-amber-900/70">Ainda depende de validação</p></div>
+              <div className="rounded-xl bg-white/80 p-4"><p className="text-xs font-bold uppercase text-emerald-700">Carência confirmada</p><p className="mt-1 text-2xl font-black text-emerald-900">{state.data.carenciaConfirmada ?? 0}</p><p className="text-xs text-emerald-900/70">Não confirmada automaticamente</p></div>
+              <div className="sm:col-span-3 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-blue-950/80"><span>{state.data.periodMonths ?? 0} meses em períodos consolidados</span><span>{state.data.gaps?.length || 0} lacunas</span><span>{state.data.overlaps?.length || 0} sobreposições</span><span>{state.data.competenciesOutsidePeriods?.length || 0} competências fora de vínculos</span></div>
+            </CardContent>
+          </Card>
 
           {state.data.timeline?.length > 0 && (
             <Card className="border-2 shadow-lg overflow-hidden">

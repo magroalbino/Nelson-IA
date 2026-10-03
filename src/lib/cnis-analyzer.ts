@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
-import { calculateCnisMetrics as calculateDeterministicMetrics, detectOverlaps, type CnisPeriod } from "@/lib/cnis-metrics";
+import { calculateCnisMetrics as calculateDeterministicMetrics, type CnisPeriod } from "@/lib/cnis-metrics";
 import { structureCnis, type StructuredCnis } from "@/lib/cnis-structured";
 import { auditStructuredCnis } from "@/lib/cnis-audit";
 import { normalizeEstimate } from "@/lib/cnis-response";
@@ -19,8 +19,16 @@ export const CnisAnalysisSchema = z.object({
   contributionStatus: z.string(),
   tempoContribuicaoTotal: z.string(),
   carenciaTotal: z.number().nonnegative(),
+  carenciaPotencial: z.number().nonnegative().default(0),
+  carenciaConfirmada: z.number().nonnegative().default(0),
   competenciasIdentificadas: z.number().nonnegative().optional(),
   calculationBasis: z.string().optional(),
+  periodMonths: z.number().nonnegative().default(0),
+  overlappingMonths: z.number().nonnegative().default(0),
+  gaps: z.array(z.object({ start: z.string(), end: z.string(), months: z.number().nonnegative() })).default([]),
+  overlaps: z.array(z.object({ start: z.string(), end: z.string(), months: z.number().nonnegative() })).default([]),
+  invalidPeriods: z.array(z.object({ start: z.string(), end: z.string(), source: z.string(), page: z.number().optional() })).default([]),
+  competenciesOutsidePeriods: z.array(z.string()).default([]),
   estimativaAposentadoria: z.string(),
   progressoAposentadoria: z.number().min(0).max(100),
   pendencies: z.array(z.object({
@@ -205,7 +213,7 @@ async function ocrPdf(pdf: Buffer): Promise<string[]> {
 }
 
 export function calculateCnisMetrics(facts: CnisFacts) {
-  return calculateDeterministicMetrics(facts.competencies, facts.indicators.length);
+  return calculateDeterministicMetrics(facts.competencies, facts.indicators.length, facts.periods);
 }
 
 export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAnalysis> {
@@ -214,10 +222,9 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
   const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
   const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-2.5-flash-lite";
   const metrics = calculateCnisMetrics(facts);
-  const overlaps = detectOverlaps(facts.periods);
   const auditFindings = auditStructuredCnis(facts.structured, facts.text.length);
   const timeline = buildCnisTimeline(facts.structured, auditFindings);
-  const prompt = `Você é um analista previdenciário. Analise os fatos extraídos de um CNIS e retorne SOMENTE JSON válido, sem markdown. Não invente dados: deixe claro quando algo for estimativa ou hipótese. Use os achados determinísticos fornecidos como base e não os contradiga.\n\nFATOS: ${JSON.stringify({ ...facts, text: facts.text.slice(0, 50000), evidence: facts.evidence.slice(0, 250), overlaps: overlaps.length, auditFindings, ...metrics })}\n\nRetorne exatamente estes campos: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal (número), competenciasIdentificadas, calculationBasis, estimativaAposentadoria, progressoAposentadoria (0-100), pendencies (array com indicator, description, recommendedAction, relatedPeriods, severity), summary, recommendations (array), nextSteps (array). Os cálculos de carência, tempo e progresso devem respeitar os valores determinísticos fornecidos; não trate a estimativa como aconselhamento jurídico.`;
+  const prompt = `Você é um analista previdenciário. Analise os fatos extraídos de um CNIS e retorne SOMENTE JSON válido, sem markdown. Não invente dados: deixe claro quando algo for estimativa ou hipótese. Use os achados determinísticos fornecidos como base e não os contradiga. Nunca diga que a carência está confirmada apenas porque uma competência foi identificada.\n\nFATOS: ${JSON.stringify({ ...facts, text: facts.text.slice(0, 50000), evidence: facts.evidence.slice(0, 250), auditFindings, ...metrics })}\n\nRetorne exatamente estes campos: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal (número), carenciaPotencial (número), carenciaConfirmada (número), competenciasIdentificadas, calculationBasis, periodMonths, overlappingMonths, gaps, overlaps, invalidPeriods, competenciesOutsidePeriods, estimativaAposentadoria, progressoAposentadoria (0-100), pendencies (array com indicator, description, recommendedAction, relatedPeriods, severity), summary, recommendations (array), nextSteps (array). Os cálculos de carência, tempo e progresso devem respeitar os valores determinísticos fornecidos; não trate a estimativa como aconselhamento jurídico.`;
 
   const payload = JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } });
   let response: Response | undefined;
