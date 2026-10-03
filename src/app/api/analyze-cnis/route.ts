@@ -28,6 +28,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[API CNIS] Erro:", error);
     const message = error instanceof Error ? error.message : "Falha ao analisar o CNIS.";
-    return NextResponse.json({ message }, { status: 500 });
+    const isDocumentError = /PDF|OCR|texto|legível|extração|arquivo/i.test(message);
+    const isTimeout = /tempo limite|timeout|excedido|abortar/i.test(message);
+    return NextResponse.json({ message, retryable: !isDocumentError || isTimeout }, { status: isDocumentError && !isTimeout ? 422 : isTimeout ? 504 : 500 });
   }
 }

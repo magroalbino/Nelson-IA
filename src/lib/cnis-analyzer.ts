@@ -11,7 +11,7 @@ import { normalizeEstimate } from "@/lib/cnis-response";
 import { buildCnisTimeline } from "@/lib/cnis-timeline";
 
 const execFileAsync = promisify(execFile);
-const execFileWithInput = execFileAsync as unknown as (file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>;
+const execFileWithInput = execFileAsync as unknown as (file: string, args: string[], options?: { timeout?: number; maxBuffer?: number }) => Promise<{ stdout: string; stderr: string }>;
 
 export const CnisAnalysisSchema = z.object({
   qualityScore: z.number().min(0).max(100),
@@ -148,13 +148,16 @@ export async function extractCnisFacts(pdf: Buffer): Promise<CnisFacts> {
   const pdfModule = await import("pdf-parse/lib/pdf-parse.js");
   const pdfParse = (pdfModule.default || pdfModule) as unknown as (buffer: Buffer, options?: PdfParseOptions) => Promise<PdfParseResult>;
   const parsedPages: string[] = [];
-  const parsed = await pdfParse(pdf, {
-    pagerender: async (page) => {
-      const text = await renderPdfPage(page);
-      parsedPages.push(text);
-      return text;
-    },
-  });
+  const parsed = await Promise.race([
+    pdfParse(pdf, {
+      pagerender: async (page) => {
+        const text = await renderPdfPage(page);
+        parsedPages.push(text);
+        return text;
+      },
+    }),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido na extração do PDF.")), 25000)),
+  ]);
   const textPages = parsedPages.length ? parsedPages : [normalizeText(parsed.text)];
   const text = normalizeText(textPages.join("\n\n"));
   const structured = structureCnis(textPages);
@@ -189,22 +192,30 @@ function inferPeriods(pageTexts: string[]): CnisPeriod[] {
 async function ocrPdf(pdf: Buffer): Promise<string[]> {
   const workdir = await mkdtemp(join(tmpdir(), "nelson-cnis-"));
   const pdfPath = join(workdir, "document.pdf");
+  const pages: string[] = [];
   try {
     await writeFile(pdfPath, pdf);
-    await execFileWithInput("pdftoppm", ["-jpeg", "-r", "160", "-f", "1", "-l", "20", pdfPath, join(workdir, "page")]);
+    await execFileWithInput("pdftoppm", ["-jpeg", "-r", "160", "-f", "1", "-l", "20", pdfPath, join(workdir, "page")], { timeout: 45000, maxBuffer: 1024 * 1024 });
     const images = (await readdir(workdir)).filter((name) => name.endsWith(".jpg")).sort();
     if (!images.length) throw new Error("Não foi possível converter as páginas do PDF para OCR.");
     const { createWorker } = await import("tesseract.js");
     const worker = await createWorker("por");
     try {
-      const pages: string[] = [];
-      for (const image of images) pages.push(normalizeText((await worker.recognize(await readFile(join(workdir, image)))).data.text));
+      for (const image of images) {
+        const recognition = worker.recognize(await readFile(join(workdir, image)));
+        const result = await Promise.race([
+          recognition,
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido no OCR.")), 20000)),
+        ]);
+        pages.push(normalizeText(result.data.text));
+      }
       return pages;
     } finally {
       await worker.terminate();
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "erro desconhecido";
+    if (pages.length && message.includes("Tempo limite")) return pages;
     if (message.includes("pdftoppm") || message.includes("ENOENT")) throw new Error("O PDF não possui texto selecionável e o OCR não está disponível neste servidor.");
     throw new Error(`Falha ao executar OCR: ${message}`);
   } finally {
@@ -216,22 +227,67 @@ export function calculateCnisMetrics(facts: CnisFacts) {
   return calculateDeterministicMetrics(facts.competencies, facts.indicators.length, facts.periods);
 }
 
+function buildDeterministicFallback(facts: CnisFacts, reason: string): CnisAnalysis {
+  const metrics = calculateCnisMetrics(facts);
+  const auditFindings = auditStructuredCnis(facts.structured, facts.text.length);
+  const timeline = buildCnisTimeline(facts.structured, auditFindings);
+  const extractionNote = facts.extractedByOcr ? " O documento foi lido com OCR; confira as fontes com atenção." : "";
+  const fallback = {
+    qualityScore: Math.min(100, Math.max(20, Math.round((facts.text.length / 12000) * 100) - (facts.extractedByOcr ? 15 : 0))),
+    riskLevel: "Indeterminado",
+    contributionStatus: "Leitura concluída; validação previdenciária necessária.",
+    estimativaAposentadoria: "Não foi possível gerar uma estimativa confiável apenas com a leitura automática disponível.",
+    pendencies: [
+      ...(metrics.gaps.length ? [{ indicator: "LACUNAS", description: `${metrics.gaps.length} lacuna(s) foram encontradas entre períodos identificados.`, recommendedAction: "Confira o CNIS original, a CTPS e os comprovantes dos períodos ausentes.", relatedPeriods: metrics.gaps.map((gap) => `${gap.start}–${gap.end}`), severity: "média" }] : []),
+      ...(metrics.overlaps.length ? [{ indicator: "SOBREPOSIÇÃO", description: `${metrics.overlaps.length} sobreposição(ões) de períodos foi(ram) identificada(s).`, recommendedAction: "Confirme se os vínculos simultâneos e suas contribuições estão corretos.", relatedPeriods: metrics.overlaps.map((overlap) => `${overlap.start}–${overlap.end}`), severity: "média" }] : []),
+      ...(reason ? [{ indicator: "IA_INDISPONÍVEL", description: "A leitura estruturada foi concluída, mas a explicação da IA não ficou disponível.", recommendedAction: "Use as tabelas, fontes e alertas deste relatório e tente novamente mais tarde para obter a explicação complementar.", relatedPeriods: [], severity: "baixa" }] : []),
+    ],
+    summary: `A análise conseguiu extrair ${facts.competencies.length} competência(s), ${facts.structured.employments.length} vínculo(s) e ${facts.structured.benefits.length} benefício(s).${extractionNote} Os números de carência são potenciais e não confirmam direito previdenciário.`,
+    recommendations: ["Confira as tabelas e as páginas de origem no CNIS original.", "Separe documentos dos períodos apontados como lacuna ou inconsistência.", "Leve o relatório a um profissional previdenciário para validação."],
+    nextSteps: ["Revisar lacunas, sobreposições e competências fora dos períodos.", "Validar indicadores e valores de contribuição.", "Refazer a análise quando houver um PDF mais legível, se necessário."],
+  };
+  return CnisAnalysisSchema.parse({ ...fallback, ...metrics, auditFindings, timeline, structured: facts.structured, reason });
+}
+
 export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAnalysis> {
   const apiKey = process.env.GOOGLE_GENAI_API_KEY;
-  if (!apiKey) throw new Error("A variável GOOGLE_GENAI_API_KEY não está configurada no servidor.");
+  if (!apiKey) return buildDeterministicFallback(facts, "Chave da IA ausente");
   const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
   const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-2.5-flash-lite";
   const metrics = calculateCnisMetrics(facts);
   const auditFindings = auditStructuredCnis(facts.structured, facts.text.length);
   const timeline = buildCnisTimeline(facts.structured, auditFindings);
-  const prompt = `Você é um analista previdenciário. Analise os fatos extraídos de um CNIS e retorne SOMENTE JSON válido, sem markdown. Não invente dados: deixe claro quando algo for estimativa ou hipótese. Use os achados determinísticos fornecidos como base e não os contradiga. Nunca diga que a carência está confirmada apenas porque uma competência foi identificada.\n\nFATOS: ${JSON.stringify({ ...facts, text: facts.text.slice(0, 50000), evidence: facts.evidence.slice(0, 250), auditFindings, ...metrics })}\n\nRetorne exatamente estes campos: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal (número), carenciaPotencial (número), carenciaConfirmada (número), competenciasIdentificadas, calculationBasis, periodMonths, overlappingMonths, gaps, overlaps, invalidPeriods, competenciesOutsidePeriods, estimativaAposentadoria, progressoAposentadoria (0-100), pendencies (array com indicator, description, recommendedAction, relatedPeriods, severity), summary, recommendations (array), nextSteps (array). Os cálculos de carência, tempo e progresso devem respeitar os valores determinísticos fornecidos; não trate a estimativa como aconselhamento jurídico.`;
+  const compactFacts = {
+    text: facts.text.slice(0, 28000),
+    pages: facts.pages,
+    extractedByOcr: facts.extractedByOcr,
+    competencies: facts.competencies.slice(0, 1200),
+    indicators: facts.indicators.slice(0, 100),
+    periods: facts.periods.slice(0, 300),
+    structured: {
+      employments: facts.structured.employments.slice(0, 200),
+      contributions: facts.structured.contributions.slice(0, 1200),
+      benefits: facts.structured.benefits.slice(0, 100),
+      indicators: facts.structured.indicators.slice(0, 100),
+    },
+    auditFindings: auditFindings.slice(0, 100),
+    metrics,
+  };
+  const prompt = `Você é um analista previdenciário. Retorne SOMENTE JSON válido, sem markdown. Não invente dados e não diga que carência está confirmada apenas porque uma competência foi identificada. Use os cálculos determinísticos fornecidos e explique limitações.\n\nFATOS ESTRUTURADOS: ${JSON.stringify(compactFacts)}\n\nRetorne exatamente: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal, carenciaPotencial, carenciaConfirmada, competenciasIdentificadas, calculationBasis, periodMonths, overlappingMonths, gaps, overlaps, invalidPeriods, competenciesOutsidePeriods, estimativaAposentadoria, progressoAposentadoria (0-100), pendencies, summary, recommendations, nextSteps. Os arrays pendencies devem conter indicator, description, recommendedAction, relatedPeriods e severity.`;
 
   const payload = JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } });
   let response: Response | undefined;
   let lastStatus = 0;
   for (const candidate of [...new Set([model, fallbackModel])]) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(candidate)}:generateContent?key=${encodeURIComponent(apiKey)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload });
+      try {
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(candidate)}:generateContent?key=${encodeURIComponent(apiKey)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload, signal: AbortSignal.timeout(30000) });
+      } catch (error) {
+        response = undefined;
+        lastStatus = 504;
+        console.error(`[GEMINI] modelo=${candidate} falhou antes de responder:`, error instanceof Error ? error.message : error);
+        continue;
+      }
       if (response.ok) break;
       lastStatus = response.status;
       const details = await response.text();
@@ -241,16 +297,17 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
     }
     if (response?.ok) break;
   }
-  if (!response?.ok) {
-    if (lastStatus === 429) throw new Error("A API Gemini atingiu o limite temporário de solicitações. Aguarde alguns segundos e tente novamente.");
-    if ([500, 502, 503, 504].includes(lastStatus)) throw new Error("A API Gemini está temporariamente indisponível. Tente novamente em alguns segundos.");
-    throw new Error(`A API Gemini respondeu com HTTP ${lastStatus}. Verifique GEMINI_MODEL e a chave da API.`);
+  if (!response?.ok) return buildDeterministicFallback(facts, `Gemini HTTP ${lastStatus}`);
+  try {
+    const body = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    const raw = body.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!raw) return buildDeterministicFallback(facts, "Resposta vazia da Gemini");
+    const parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, ""));
+    return CnisAnalysisSchema.parse({ ...parsed, estimativaAposentadoria: normalizeEstimate(parsed.estimativaAposentadoria), ...metrics, auditFindings, timeline, structured: facts.structured, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
+  } catch (error) {
+    console.error("[GEMINI] resposta inválida; usando fallback determinístico", error instanceof Error ? error.message : error);
+    return buildDeterministicFallback(facts, "Resposta inválida da Gemini");
   }
-  const body = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-  const raw = body.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!raw) throw new Error("A API Gemini não retornou uma análise.");
-  const parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, ""));
-  return CnisAnalysisSchema.parse({ ...parsed, estimativaAposentadoria: normalizeEstimate(parsed.estimativaAposentadoria), ...metrics, auditFindings, timeline, structured: facts.structured, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
 }
 
 export async function analyzeCnisPdf(pdf: Buffer) {
