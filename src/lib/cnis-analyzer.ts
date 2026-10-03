@@ -51,6 +51,14 @@ export const CnisAnalysisSchema = z.object({
     source: z.object({ page: z.number(), excerpt: z.string() }).optional(),
     tone: z.enum(["blue", "green", "amber", "red", "slate"]),
   })).default([]),
+  structured: z.object({
+    employments: z.array(z.object({
+      start: z.string(), end: z.string(), employer: z.string().nullable(), category: z.string().nullable(), indicators: z.array(z.string()), source: z.object({ page: z.number(), excerpt: z.string() }),
+    })),
+    contributions: z.array(z.object({ competency: z.string(), value: z.number().nullable(), indicator: z.string().nullable(), status: z.enum(["identified", "unknown"]), source: z.object({ page: z.number(), excerpt: z.string() }) })),
+    benefits: z.array(z.object({ kind: z.string().nullable(), start: z.string().nullable(), end: z.string().nullable(), source: z.object({ page: z.number(), excerpt: z.string() }) })),
+    indicators: z.array(z.object({ code: z.string(), periods: z.array(z.string()), source: z.object({ page: z.number(), excerpt: z.string() }) })),
+  }).default({ employments: [], contributions: [], benefits: [], indicators: [] }),
 });
 
 export type CnisAnalysis = z.infer<typeof CnisAnalysisSchema>;
@@ -235,7 +243,7 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
   const raw = body.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!raw) throw new Error("A API Gemini não retornou uma análise.");
   const parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, ""));
-  return CnisAnalysisSchema.parse({ ...parsed, estimativaAposentadoria: normalizeEstimate(parsed.estimativaAposentadoria), ...metrics, auditFindings, timeline, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
+  return CnisAnalysisSchema.parse({ ...parsed, estimativaAposentadoria: normalizeEstimate(parsed.estimativaAposentadoria), ...metrics, auditFindings, timeline, structured: facts.structured, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
 }
 
 export async function analyzeCnisPdf(pdf: Buffer) {

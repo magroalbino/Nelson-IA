@@ -14,7 +14,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileScan, Loader2, ServerCrash, Lightbulb, CheckCircle2, Target, Info, ArrowDownCircle, Clock, Calendar, Gavel, TrendingUp, Download } from "lucide-react";
+import { FileScan, FileText, Loader2, ServerCrash, Lightbulb, CheckCircle2, Target, Info, ArrowDownCircle, Clock, Calendar, Gavel, TrendingUp, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { FileUploadCard } from "@/components/file-upload-card";
 
@@ -135,6 +135,29 @@ export default function CnisAnalyzerPage() {
       pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(...slate); pdf.text(label.toUpperCase(), x + 5, top + 8);
       pdf.setFontSize(11); pdf.setTextColor(...color); pdf.text(pdf.splitTextToSize(value, width - 10).slice(0, 2), x + 5, top + 17);
     };
+    const pdfTable = (title: string, headers: string[], rows: string[][]) => {
+      sectionTitle(title);
+      const widths = headers.map((_, index) => index === 0 ? 42 : (pageWidth - margin * 2 - 42) / Math.max(1, headers.length - 1));
+      const rowHeight = 9;
+      const drawRow = (values: string[], header = false) => {
+        ensureSpace(rowHeight + 2);
+        let x = margin;
+        values.forEach((value, index) => {
+          const width = widths[index];
+          const fill: [number, number, number] = header ? [226, 232, 240] : [248, 250, 252];
+          pdf.setFillColor(...fill);
+          pdf.setDrawColor(226, 232, 240); pdf.rect(x, y - 5, width, rowHeight, "FD");
+          pdf.setFont("helvetica", header ? "bold" : "normal"); pdf.setFontSize(header ? 7.5 : 7.5); pdf.setTextColor(...(header ? navy : slate));
+          pdf.text(pdf.splitTextToSize(value || "Não identificado", width - 4).slice(0, 2), x + 2, y);
+          x += width;
+        });
+        y += rowHeight;
+      };
+      drawRow(headers, true);
+      if (rows.length) rows.slice(0, 40).forEach((row) => drawRow(row));
+      else paragraph("Nenhum registro identificado.", 9.5);
+      y += 4;
+    };
 
     pdf.setFillColor(...navy); pdf.rect(0, 0, pageWidth, 52, "F");
     pdf.setTextColor(255, 255, 255); pdf.setFont("helvetica", "bold"); pdf.setFontSize(22); pdf.text("Nelson IA", margin, 20);
@@ -162,12 +185,15 @@ export default function CnisAnalyzerPage() {
     sectionTitle("4. Linha do tempo");
     if (state.data.timeline?.length) state.data.timeline.slice(0, 20).forEach((event: any) => paragraph(`${event.period} — ${event.title}. ${event.detail}${event.source ? ` Fonte: página ${event.source.page}.` : ""}`, 10));
     else paragraph("Não foi possível montar uma linha do tempo com os dados identificados.");
-    sectionTitle("5. Pontos para conferir");
+    pdfTable("5. Vínculos identificados", ["Empregador", "Categoria", "Início", "Fim", "Indicadores", "Fonte"], (state.data.structured?.employments || []).map((item: any) => [item.employer || "Não identificado", item.category || "Não identificado", item.start, item.end, item.indicators?.join(", ") || "Nenhum", `Pág. ${item.source?.page || "—"}`]));
+    pdfTable("6. Contribuições identificadas", ["Competência", "Situação", "Indicador", "Valor", "Fonte"], (state.data.structured?.contributions || []).map((item: any) => [item.competency, item.status === "identified" ? "Identificada" : "Não confirmada", item.indicator || "Nenhum", item.value == null ? "Não identificado" : String(item.value), `Pág. ${item.source?.page || "—"}`]));
+    pdfTable("7. Benefícios identificados", ["Benefício", "Início", "Fim", "Fonte"], (state.data.structured?.benefits || []).map((item: any) => [item.kind || "Não identificado", item.start || "Não identificado", item.end || "Não identificado", `Pág. ${item.source?.page || "—"}`]));
+    sectionTitle("8. Pontos para conferir");
     const auditAlerts = (state.data.auditFindings || []).filter((item: any) => item.kind !== "DADO");
     if (auditAlerts.length) auditAlerts.slice(0, 12).forEach((item: any) => callout(`${item.kind}: ${item.title}`, `${item.description} Ação recomendada: ${item.recommendedAction}`, item.kind === "ALERTA" ? [255, 247, 237] : [254, 242, 242], item.kind === "ALERTA" ? [217, 119, 6] : [220, 38, 38]));
     else paragraph("Nenhum ponto adicional para conferência foi registrado na leitura automática.");
-    sectionTitle("6. Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
-    sectionTitle("7. Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    sectionTitle("9. Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    sectionTitle("10. Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
     callout("Importante", "Leve este relatório e o CNIS original a um profissional previdenciário. A análise automática pode não identificar todos os detalhes ou documentos necessários.", [254, 242, 242], [220, 38, 38]);
     ensureSpace(18); pdf.setFont("helvetica", "italic"); pdf.setFontSize(9); pdf.setTextColor(...slate);
     pdf.text("Nelson IA — relatório informativo, não substitui orientação profissional.", margin, y);
@@ -316,6 +342,27 @@ export default function CnisAnalyzerPage() {
               </CardContent>
             </Card>
           )}
+
+          <Card className="border-2 shadow-lg overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b">
+              <CardTitle className="text-2xl font-black flex items-center gap-2 text-primary"><FileText className="w-6 h-6" /> Dados encontrados no documento</CardTitle>
+              <CardDescription className="text-base">Consulte os registros exatamente como foram identificados. “Não identificado” significa que essa informação não apareceu claramente no PDF.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 md:p-6 space-y-5">
+              <details open className="rounded-2xl border-2 overflow-hidden">
+                <summary className="cursor-pointer bg-blue-50 px-5 py-4 text-lg font-black text-blue-800">Vínculos ({state.data.structured?.employments?.length || 0})</summary>
+                <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-slate-100 text-xs uppercase text-slate-600"><tr><th className="p-3">Empregador</th><th className="p-3">Categoria</th><th className="p-3">Início</th><th className="p-3">Fim</th><th className="p-3">Indicadores</th><th className="p-3">Fonte</th></tr></thead><tbody>{state.data.structured?.employments?.length ? state.data.structured.employments.map((item: any, index: number) => <tr key={index} className="border-t"><td className="p-3 font-semibold">{item.employer || "Não identificado"}</td><td className="p-3">{item.category || "Não identificado"}</td><td className="p-3">{item.start}</td><td className="p-3">{item.end}</td><td className="p-3">{item.indicators?.join(", ") || "Nenhum"}</td><td className="p-3">Pág. {item.source?.page || "—"}</td></tr>) : <tr><td colSpan={6} className="p-5 text-center text-muted-foreground">Nenhum vínculo foi identificado.</td></tr>}</tbody></table></div>
+              </details>
+              <details className="rounded-2xl border-2 overflow-hidden">
+                <summary className="cursor-pointer bg-emerald-50 px-5 py-4 text-lg font-black text-emerald-800">Contribuições ({state.data.structured?.contributions?.length || 0})</summary>
+                <div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-slate-100 text-xs uppercase text-slate-600"><tr><th className="p-3">Competência</th><th className="p-3">Situação</th><th className="p-3">Indicador</th><th className="p-3">Valor identificado</th><th className="p-3">Fonte</th></tr></thead><tbody>{state.data.structured?.contributions?.length ? state.data.structured.contributions.map((item: any, index: number) => <tr key={index} className="border-t"><td className="p-3 font-semibold">{item.competency}</td><td className="p-3">{item.status === "identified" ? "Identificada" : "Não confirmada"}</td><td className="p-3">{item.indicator || "Nenhum"}</td><td className="p-3">{item.value == null ? "Não identificado" : item.value}</td><td className="p-3">Pág. {item.source?.page || "—"}</td></tr>) : <tr><td colSpan={5} className="p-5 text-center text-muted-foreground">Nenhuma contribuição foi identificada.</td></tr>}</tbody></table></div>
+              </details>
+              <details className="rounded-2xl border-2 overflow-hidden">
+                <summary className="cursor-pointer bg-amber-50 px-5 py-4 text-lg font-black text-amber-800">Benefícios ({state.data.structured?.benefits?.length || 0})</summary>
+                <div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="bg-slate-100 text-xs uppercase text-slate-600"><tr><th className="p-3">Benefício</th><th className="p-3">Início</th><th className="p-3">Fim</th><th className="p-3">Fonte</th></tr></thead><tbody>{state.data.structured?.benefits?.length ? state.data.structured.benefits.map((item: any, index: number) => <tr key={index} className="border-t"><td className="p-3 font-semibold">{item.kind || "Não identificado"}</td><td className="p-3">{item.start || "Não identificado"}</td><td className="p-3">{item.end || "Não identificado"}</td><td className="p-3">Pág. {item.source?.page || "—"}</td></tr>) : <tr><td colSpan={4} className="p-5 text-center text-muted-foreground">Nenhum benefício foi identificado.</td></tr>}</tbody></table></div>
+              </details>
+            </CardContent>
+          </Card>
 
           {/* Card de Progresso da Aposentadoria */}
           <Card className="border-2 shadow-lg bg-gradient-to-br from-primary/5 to-background">

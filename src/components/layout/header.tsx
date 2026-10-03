@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useRouter } from "next/navigation";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogIn, LogOut, User as UserIcon, UserPlus } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { signOut } from "firebase/auth";
@@ -52,6 +52,11 @@ export function AppHeader() {
         <ThemeToggle />
         {loading ? (
             <Skeleton className="h-9 w-9 rounded-full" />
+        ) : !user ? (
+            <div className="flex items-center gap-2">
+              <Button asChild variant="ghost" size="sm"><Link href="/account"><LogIn className="mr-2 h-4 w-4" /> Entrar</Link></Button>
+              <Button asChild size="sm"><Link href="/account"><UserPlus className="mr-2 h-4 w-4" /> Criar conta</Link></Button>
+            </div>
         ) : (
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
