@@ -9,7 +9,14 @@ const GenerateLegalPetitionInputSchema = z.object({
 
 const GenerateLegalPetitionOutputSchema = z.object({
   peticao: z.string().min(1),
-  documentosAnexos: z.string(),
+  documentosAnexos: z.union([z.string(), z.array(z.unknown())]).transform((value) => {
+    if (typeof value === 'string') return value;
+    return value.map((item) => {
+      if (typeof item === 'string') return item;
+      if (item && typeof item === 'object') return Object.values(item as Record<string, unknown>).join(': ');
+      return String(item);
+    }).join('\n');
+  }),
 });
 
 type GeminiResponse = {
@@ -53,7 +60,7 @@ export async function generateLegalPetition(input: { documentUri: string; tipoPe
   const prompt = `Você é um assistente de redação jurídica previdenciária. Analise o documento anexado e prepare uma minuta de ${validated.tipoPetição === 'judicial' ? 'petição inicial judicial para a Justiça Federal' : 'requerimento administrativo dirigido ao INSS'}.
 
 Regras obrigatórias:
-- Retorne SOMENTE JSON válido, sem markdown, com as chaves "peticao" e "documentosAnexos".
+- Retorne SOMENTE JSON válido, sem markdown, com as chaves "peticao" e "documentosAnexos". documentosAnexos deve ser uma única string com uma pendência por linha, nunca um array.
 - Não invente nomes, datas, números, vínculos, benefícios, leis aplicáveis a fatos não identificados ou provas que não estejam no documento.
 - Quando faltar informação, use [INFORMAÇÃO NÃO IDENTIFICADA] e liste a pendência em documentosAnexos.
 - A petição é uma minuta informativa e deve ser revisada por profissional habilitado antes de qualquer protocolo.

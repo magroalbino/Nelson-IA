@@ -78,7 +78,7 @@ export default function DocumentGeneratorPage() {
       <header className="text-center space-y-4">
         <h1 className="text-3xl md:text-4xl font-black text-primary">Gerador de Petições Previdenciárias</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Transforme documentos (CNIS, PPP, etc.) em peças jurídicas fundamentadas em segundos.
+          Transforme informações do seu CNIS em peças jurídicas fundamentadas em segundos.
         </p>
       </header>
 
@@ -92,12 +92,12 @@ export default function DocumentGeneratorPage() {
             <input type="hidden" name="documentUri" value={documentUri} />
 
             <div className="space-y-4">
-                <Label className="text-xl font-black flex items-center gap-2 text-slate-900">
+                <Label className="text-xl font-black flex items-center gap-2 text-foreground">
                     <UploadCloud className="w-6 h-6 text-primary" /> 
                     1. Anexe o Documento Base
                 </Label>
-                 <p className="text-base text-slate-500 font-medium">
-                    Envie o CNIS, PPP ou Laudo em formato PDF ou Word (.doc, .docx).
+                 <p className="text-base text-muted-foreground font-medium">
+                    Envie o CNIS ou outro documento em formato PDF ou Word (.doc, .docx).
                 </p>
                 <FileUploadCard 
                     name="document"
@@ -107,7 +107,7 @@ export default function DocumentGeneratorPage() {
             </div>
             
             <div className="space-y-4">
-              <Label htmlFor="tipoPetição" className="text-xl font-black flex items-center gap-2 text-slate-900">
+              <Label htmlFor="tipoPetição" className="text-xl font-black flex items-center gap-2 text-foreground">
                 <FileCheck className="w-6 h-6 text-primary" />
                 2. Escolha o Tipo de Peça
               </Label>
@@ -125,7 +125,7 @@ export default function DocumentGeneratorPage() {
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex justify-center bg-slate-50 border-t py-10">
+          <CardFooter className="flex justify-center bg-muted/30 border-t py-10">
             <SubmitButton disabled={!documentUri} />
           </CardFooter>
         </form>
@@ -159,7 +159,7 @@ export default function DocumentGeneratorPage() {
               <Textarea
                 readOnly
                 value={state.data.peticao}
-                className="min-h-[800px] border-none rounded-none bg-white font-serif text-lg p-12 md:p-16 leading-relaxed focus-visible:ring-0 text-slate-800"
+                className="min-h-[800px] border-none rounded-none bg-background font-serif text-lg p-12 md:p-16 leading-relaxed focus-visible:ring-0 text-foreground"
               />
             </CardContent>
           </Card>
@@ -171,8 +171,8 @@ export default function DocumentGeneratorPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="bg-white rounded-2xl p-8 border-2 border-primary/10 shadow-sm">
-                <p className="text-slate-700 whitespace-pre-wrap leading-relaxed text-lg font-medium">
+              <div className="bg-background rounded-2xl p-8 border-2 border-primary/10 shadow-sm">
+                <p className="text-foreground whitespace-pre-wrap leading-relaxed text-lg font-medium">
                     {state.data.documentosAnexos}
                 </p>
               </div>

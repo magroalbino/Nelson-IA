@@ -21,7 +21,8 @@ import {
   ChevronsRight,
   UserCircle,
   LogOut,
-  HelpCircle
+  HelpCircle,
+  History
 } from "lucide-react";
 import Link from "next/link";
 import { signOut } from "firebase/auth";
@@ -55,6 +56,7 @@ export function AppSidebar() {
     {
         group: "Conta",
         items: [
+            { href: "/dashboard/history", label: "Minhas Análises", icon: History },
             { href: "/dashboard/profile", label: "Meu Perfil", icon: UserCircle },
             { href: "/dashboard/support", label: "Ajuda & Suporte", icon: HelpCircle },
         ]

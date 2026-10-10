@@ -2,6 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { jsPDF } from "jspdf";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "@/lib/firebase";
+import { saveCnisAnalysis } from "@/lib/cnis-history";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -62,6 +65,7 @@ export default function CnisAnalyzerPage() {
   const [state, setState] = useState<any>(initialState);
   const [cnisDocument, setCnisDocument] = useState<File | null>(null);
   const [pending, setPending] = useState(false);
+  const [user] = useAuthState(auth);
 
   const handleFileSelect = (file: File | null) => {
     setCnisDocument(file);
@@ -79,6 +83,13 @@ export default function CnisAnalyzerPage() {
       const response = await fetch("/api/analyze-cnis", { method: "POST", body: formData });
       const result = await response.json();
       setState({ message: result.message, data: response.ok ? result.data : null, errors: response.ok ? {} : { cnisDocument: [result.message] } });
+      if (response.ok && result.data && user) {
+        try {
+          await saveCnisAnalysis(user, result.data, cnisDocument.name);
+        } catch (error) {
+          console.error("[CNIS] Não foi possível salvar a análise:", error);
+        }
+      }
     } catch {
       setState({ message: "Não foi possível conectar ao servidor de análise.", data: null, errors: { cnisDocument: ["Erro de conexão"] } });
     } finally {
