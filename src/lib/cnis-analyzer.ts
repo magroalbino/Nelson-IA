@@ -1,6 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
@@ -9,6 +8,8 @@ import { structureCnis, type StructuredCnis } from "@/lib/cnis-structured";
 import { auditStructuredCnis } from "@/lib/cnis-audit";
 import { normalizeEstimate } from "@/lib/cnis-response";
 import { buildCnisTimeline } from "@/lib/cnis-timeline";
+import { sanitizeAnalysis, sanitizeSensitiveText } from "@/lib/cnis-privacy";
+import { withTemporaryDirectory } from "@/lib/cnis-temp";
 
 const execFileAsync = promisify(execFile);
 const execFileWithInput = execFileAsync as unknown as (file: string, args: string[], options?: { timeout?: number; maxBuffer?: number }) => Promise<{ stdout: string; stderr: string }>;
@@ -190,37 +191,39 @@ function inferPeriods(pageTexts: string[]): CnisPeriod[] {
 }
 
 async function ocrPdf(pdf: Buffer): Promise<string[]> {
-  const workdir = await mkdtemp(join(tmpdir(), "nelson-cnis-"));
-  const pdfPath = join(workdir, "document.pdf");
-  const pages: string[] = [];
-  try {
-    await writeFile(pdfPath, pdf);
-    await execFileWithInput("pdftoppm", ["-jpeg", "-r", "160", "-f", "1", "-l", "20", pdfPath, join(workdir, "page")], { timeout: 45000, maxBuffer: 1024 * 1024 });
-    const images = (await readdir(workdir)).filter((name) => name.endsWith(".jpg")).sort();
-    if (!images.length) throw new Error("Não foi possível converter as páginas do PDF para OCR.");
-    const { createWorker } = await import("tesseract.js");
-    const worker = await createWorker("por");
+  return withTemporaryDirectory("nelson-cnis-", async (workdir) => {
+    const pdfPath = join(workdir, "document.pdf");
+    const pages: string[] = [];
     try {
-      for (const image of images) {
-        const recognition = worker.recognize(await readFile(join(workdir, image)));
-        const result = await Promise.race([
-          recognition,
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido no OCR.")), 20000)),
-        ]);
-        pages.push(normalizeText(result.data.text));
+      await writeFile(pdfPath, pdf);
+      await execFileWithInput("pdftoppm", ["-jpeg", "-r", "160", "-f", "1", "-l", "20", pdfPath, join(workdir, "page")], { timeout: 45000, maxBuffer: 1024 * 1024 });
+      const images = (await readdir(workdir)).filter((name) => name.endsWith(".jpg")).sort();
+      if (!images.length) throw new Error("Não foi possível converter as páginas do PDF para OCR.");
+      const { createWorker } = await import("tesseract.js");
+      const worker = await createWorker("por");
+      try {
+        for (const image of images) {
+          const recognition = worker.recognize(await readFile(join(workdir, image)));
+          const result = await Promise.race([
+            recognition,
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido no OCR.")), 20000)),
+          ]);
+          pages.push(normalizeText(result.data.text));
+        }
+        return pages;
+      } finally {
+        await worker.terminate();
       }
-      return pages;
-    } finally {
-      await worker.terminate();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "erro desconhecido";
+      if (pages.length && message.includes("Tempo limite")) return pages;
+      throw error;
     }
-  } catch (error) {
+  }).catch((error) => {
     const message = error instanceof Error ? error.message : "erro desconhecido";
-    if (pages.length && message.includes("Tempo limite")) return pages;
     if (message.includes("pdftoppm") || message.includes("ENOENT")) throw new Error("O PDF não possui texto selecionável e o OCR não está disponível neste servidor.");
-    throw new Error(`Falha ao executar OCR: ${message}`);
-  } finally {
-    await rm(workdir, { recursive: true, force: true });
-  }
+    throw new Error(`Falha ao executar OCR: ${sanitizeSensitiveText(message)}`);
+  });
 }
 
 export function calculateCnisMetrics(facts: CnisFacts) {
@@ -257,8 +260,8 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
   const metrics = calculateCnisMetrics(facts);
   const auditFindings = auditStructuredCnis(facts.structured, facts.text.length);
   const timeline = buildCnisTimeline(facts.structured, auditFindings);
-  const compactFacts = {
-    text: facts.text.slice(0, 28000),
+  const compactFacts = sanitizeAnalysis({
+    text: sanitizeSensitiveText(facts.text).slice(0, 28000),
     pages: facts.pages,
     extractedByOcr: facts.extractedByOcr,
     competencies: facts.competencies.slice(0, 1200),
@@ -272,7 +275,7 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
     },
     auditFindings: auditFindings.slice(0, 100),
     metrics,
-  };
+  });
   const prompt = `Você é um analista previdenciário. Retorne SOMENTE JSON válido, sem markdown. Não invente dados e não diga que carência está confirmada apenas porque uma competência foi identificada. Use os cálculos determinísticos fornecidos e explique limitações.\n\nFATOS ESTRUTURADOS: ${JSON.stringify(compactFacts)}\n\nRetorne exatamente: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal, carenciaPotencial, carenciaConfirmada, competenciasIdentificadas, calculationBasis, periodMonths, overlappingMonths, gaps, overlaps, invalidPeriods, competenciesOutsidePeriods, estimativaAposentadoria, progressoAposentadoria (0-100), pendencies, summary, recommendations, nextSteps. Os arrays pendencies devem conter indicator, description, recommendedAction, relatedPeriods e severity.`;
 
   const payload = JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } });

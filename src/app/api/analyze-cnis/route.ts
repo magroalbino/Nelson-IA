@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { analyzeCnisPdf } from "@/lib/cnis-analyzer";
+import { safeErrorMessage } from "@/lib/cnis-privacy";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,8 +27,8 @@ export async function POST(request: Request) {
     const data = await analyzeCnisPdf(bytes);
     return NextResponse.json({ message: "Análise do CNIS concluída!", data });
   } catch (error) {
-    console.error("[API CNIS] Erro:", error);
-    const message = error instanceof Error ? error.message : "Falha ao analisar o CNIS.";
+    console.error("[API CNIS] Falha operacional:", error instanceof Error ? error.name : "erro_desconhecido");
+    const message = safeErrorMessage(error);
     const isDocumentError = /PDF|OCR|texto|legível|extração|arquivo/i.test(message);
     const isTimeout = /tempo limite|timeout|excedido|abortar/i.test(message);
     return NextResponse.json({ message, retryable: !isDocumentError || isTimeout }, { status: isDocumentError && !isTimeout ? 422 : isTimeout ? 504 : 500 });

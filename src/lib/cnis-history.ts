@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
+import { sanitizeAnalysis, sanitizeFileName } from "@/lib/cnis-privacy";
 
 export type SavedCnisAnalysis = {
   id: string;
@@ -29,10 +30,10 @@ function toPlainObject(value: unknown): Record<string, unknown> {
 }
 
 export async function saveCnisAnalysis(user: User, analysis: unknown, fileName: string) {
-  const data = toPlainObject(analysis);
+  const data = sanitizeAnalysis(toPlainObject(analysis));
   const ref = await addDoc(collection(db, "cnisAnalyses"), {
     uid: user.uid,
-    fileName: fileName || "CNIS.pdf",
+    fileName: sanitizeFileName(fileName),
     createdAt: serverTimestamp(),
     summary: typeof data.summary === "string" ? data.summary : "Análise de CNIS concluída.",
     tempoContribuicaoTotal: typeof data.tempoContribuicaoTotal === "string" ? data.tempoContribuicaoTotal : "Não identificado",
