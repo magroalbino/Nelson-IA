@@ -29,7 +29,7 @@ const initialState = {
 
 function SubmitButton({ disabled, pending }: { disabled: boolean; pending: boolean }) {
   return (
-    <Button type="submit" disabled={pending || disabled} size="lg" className="h-16 px-8 text-xl font-bold shadow-lg">
+    <Button type="submit" disabled={pending || disabled} size="lg" className="h-16 px-8 text-xl font-bold shadow-lg" aria-describedby="cnis-submit-help">
       {pending ? (
         <>
           <Loader2 className="mr-3 h-6 w-6 animate-spin" />
@@ -72,6 +72,7 @@ export default function CnisAnalyzerPage() {
   const [state, setState] = useState<any>(initialState);
   const [cnisDocument, setCnisDocument] = useState<File | null>(null);
   const [pending, setPending] = useState(false);
+  const [uploadKey, setUploadKey] = useState(0);
   const [user] = useAuthState(auth);
 
   const handleFileSelect = (file: File | null) => {
@@ -248,12 +249,16 @@ export default function CnisAnalyzerPage() {
         </div>
         <form onSubmit={handleSubmit}>
           <CardContent className="pt-8">
-             <FileUploadCard 
+             <FileUploadCard
+                key={uploadKey}
                 name="cnisDocument"
                 onFileSelect={handleFileSelect}
                 acceptedFileTypes={["application/pdf"]}
                 maxSizeMB={25}
              />
+              <p id="cnis-submit-help" className="mt-4 text-center text-sm leading-relaxed text-muted-foreground">
+                O arquivo é usado apenas para esta análise. PDFs com texto selecionável costumam ser processados mais rapidamente.
+              </p>
               {state.errors?.cnisDocument && (
                 <p className="text-lg text-destructive font-bold text-center mt-4">{state.errors.cnisDocument[0]}</p>
               )}
@@ -262,6 +267,12 @@ export default function CnisAnalyzerPage() {
             <SubmitButton disabled={!cnisDocument} pending={pending} />
           </CardFooter>
         </form>
+        {pending && (
+          <div role="status" aria-live="polite" className="flex items-center justify-center gap-3 border-t bg-primary/5 px-6 py-4 text-center text-sm font-medium text-primary">
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+            <span>Estamos lendo o documento. PDFs escaneados podem levar mais tempo; não feche esta página.</span>
+          </div>
+        )}
       </Card>
         </>
       )}
@@ -286,6 +297,12 @@ export default function CnisAnalyzerPage() {
             </div>
               <Button type="button" onClick={downloadReport} size="lg" className="font-bold shadow-md">
               <Download className="mr-2 h-5 w-5" /> Baixar relatório em PDF
+            </Button>
+          </div>
+          <div className="flex flex-col gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-relaxed text-muted-foreground">Confira os alertas e os dados que exigem validação antes de tomar uma decisão.</p>
+            <Button type="button" variant="outline" onClick={() => { setState(initialState); setCnisDocument(null); setUploadKey((key) => key + 1); }} className="shrink-0 font-bold">
+              Fazer nova análise
             </Button>
           </div>
           
