@@ -61,6 +61,13 @@ function getSeverityBadge(severity: string) {
   return <Badge variant="outline">{severity}</Badge>;
 }
 
+function getSimulationStatus(status: string) {
+  if (status === "requisito_potencialmente_atendido") return { label: "Requisito potencialmente atendido", className: "bg-emerald-100 text-emerald-800 border-emerald-200" };
+  if (status === "nao_atingido") return { label: "Ainda não atingido", className: "bg-amber-100 text-amber-800 border-amber-200" };
+  if (status === "conferencia_necessaria") return { label: "Conferência necessária", className: "bg-orange-100 text-orange-800 border-orange-200" };
+  return { label: "Dados insuficientes", className: "bg-slate-100 text-slate-800 border-slate-200" };
+}
+
 export default function CnisAnalyzerPage() {
   const [state, setState] = useState<any>(initialState);
   const [cnisDocument, setCnisDocument] = useState<File | null>(null);
@@ -195,18 +202,28 @@ export default function CnisAnalyzerPage() {
     paragraph(`A contagem potencial de carência é de ${state.data.carenciaPotencial ?? state.data.carenciaTotal ?? 0} competência(s), mas a carência confirmada automaticamente é ${state.data.carenciaConfirmada ?? 0}. O resultado depende da validação das contribuições e dos indicadores pelo INSS.`, 10);
     paragraph(`Períodos consolidados: ${state.data.periodMonths ?? 0} mês(es). Lacunas: ${(state.data.gaps || []).length}. Sobreposições: ${(state.data.overlaps || []).length}. Competências fora dos períodos: ${(state.data.competenciesOutsidePeriods || []).length}.`, 10);
     (state.data.auditFindings || []).filter((item: any) => item.kind === "DADO").slice(0, 8).forEach((item: any) => paragraph(`• ${item.description} (página ${item.source?.page || "não identificada"})`, 10));
-    sectionTitle("4. Linha do tempo");
+    if (state.data.simulation) {
+      const simulation = state.data.simulation;
+      sectionTitle("4. Simulação verificável");
+      paragraph(`Status: ${getSimulationStatus(simulation.status).label}. Verificação isolada de carência potencial: ${simulation.potentialMonths} de ${simulation.requirement} meses. Saldo potencial: ${simulation.remainingPotentialMonths} mês(es).`, 10);
+      simulation.calculationMemory.forEach((item: string) => paragraph(`• ${item}`, 10));
+      paragraph(`Períodos considerados: ${simulation.consideredPeriods.length ? simulation.consideredPeriods.join(", ") : "Nenhum período consolidado."}`, 9.5);
+      paragraph(`Períodos excluídos ou incertos: ${simulation.excludedOrUncertainPeriods.length ? simulation.excludedOrUncertainPeriods.join(", ") : "Nenhum apontamento estrutural."}`, 9.5);
+      paragraph(`Dados ausentes: ${simulation.missingData.join(", ")}.`, 9.5);
+      paragraph(`${simulation.limitation} Fonte: ${simulation.normativeSource}`, 9.5);
+    }
+    sectionTitle("5. Linha do tempo");
     if (state.data.timeline?.length) state.data.timeline.slice(0, 20).forEach((event: any) => paragraph(`${event.period} — ${event.title}. ${event.detail}${event.source ? ` Fonte: página ${event.source.page}.` : ""}`, 10));
     else paragraph("Não foi possível montar uma linha do tempo com os dados identificados.");
-    pdfTable("5. Vínculos identificados", ["Empregador", "Categoria", "Início", "Fim", "Indicadores", "Fonte"], (state.data.structured?.employments || []).map((item: any) => [item.employer || "Não identificado", item.category || "Não identificado", item.start, item.end, item.indicators?.join(", ") || "Nenhum", `Pág. ${item.source?.page || "—"}`]));
-    pdfTable("6. Contribuições identificadas", ["Competência", "Situação", "Indicador", "Valor", "Fonte"], (state.data.structured?.contributions || []).map((item: any) => [item.competency, item.status === "identified" ? "Identificada" : "Não confirmada", item.indicator || "Nenhum", item.value == null ? "Não identificado" : String(item.value), `Pág. ${item.source?.page || "—"}`]));
-    pdfTable("7. Benefícios identificados", ["Benefício", "Início", "Fim", "Fonte"], (state.data.structured?.benefits || []).map((item: any) => [item.kind || "Não identificado", item.start || "Não identificado", item.end || "Não identificado", `Pág. ${item.source?.page || "—"}`]));
-    sectionTitle("8. Pontos para conferir");
+    pdfTable("6. Vínculos identificados", ["Empregador", "Categoria", "Início", "Fim", "Indicadores", "Fonte"], (state.data.structured?.employments || []).map((item: any) => [item.employer || "Não identificado", item.category || "Não identificado", item.start, item.end, item.indicators?.join(", ") || "Nenhum", `Pág. ${item.source?.page || "—"}`]));
+    pdfTable("7. Contribuições identificadas", ["Competência", "Situação", "Indicador", "Valor", "Fonte"], (state.data.structured?.contributions || []).map((item: any) => [item.competency, item.status === "identified" ? "Identificada" : "Não confirmada", item.indicator || "Nenhum", item.value == null ? "Não identificado" : String(item.value), `Pág. ${item.source?.page || "—"}`]));
+    pdfTable("8. Benefícios identificados", ["Benefício", "Início", "Fim", "Fonte"], (state.data.structured?.benefits || []).map((item: any) => [item.kind || "Não identificado", item.start || "Não identificado", item.end || "Não identificado", `Pág. ${item.source?.page || "—"}`]));
+    sectionTitle("9. Pontos para conferir");
     const auditAlerts = (state.data.auditFindings || []).filter((item: any) => item.kind !== "DADO");
     if (auditAlerts.length) auditAlerts.slice(0, 12).forEach((item: any) => callout(`${item.kind}: ${item.title}`, `${item.description} Ação recomendada: ${item.recommendedAction}`, item.kind === "ALERTA" ? [255, 247, 237] : [254, 242, 242], item.kind === "ALERTA" ? [217, 119, 6] : [220, 38, 38]));
     else paragraph("Nenhum ponto adicional para conferência foi registrado na leitura automática.");
-    sectionTitle("9. Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
-    sectionTitle("10. Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    sectionTitle("10. Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    sectionTitle("11. Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
     callout("Importante", "Leve este relatório e o CNIS original a um profissional previdenciário. A análise automática pode não identificar todos os detalhes ou documentos necessários.", [254, 242, 242], [220, 38, 38]);
     ensureSpace(18); pdf.setFont("helvetica", "italic"); pdf.setFontSize(9); pdf.setTextColor(...slate);
     pdf.text("Nelson IA — relatório informativo, não substitui orientação profissional.", margin, y);
@@ -331,6 +348,42 @@ export default function CnisAnalyzerPage() {
               <div className="sm:col-span-3 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-blue-950/80"><span>{state.data.periodMonths ?? 0} meses em períodos consolidados</span><span>{state.data.gaps?.length || 0} lacunas</span><span>{state.data.overlaps?.length || 0} sobreposições</span><span>{state.data.competenciesOutsidePeriods?.length || 0} competências fora de vínculos</span></div>
             </CardContent>
           </Card>
+
+          {state.data.simulation && (() => {
+            const simulation = state.data.simulation;
+            const simulationStatus = getSimulationStatus(simulation.status);
+            return (
+              <Card className="border-2 border-indigo-100 bg-indigo-50/60 shadow-sm">
+                <CardHeader className="border-b border-indigo-100">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <CardTitle className="text-2xl font-black text-indigo-950">Simulação verificável</CardTitle>
+                      <CardDescription className="mt-2 text-base text-indigo-950/75">Verificação isolada da carência potencial para aposentadoria programada. Ela não confirma direito ao benefício.</CardDescription>
+                    </div>
+                    <Badge variant="outline" className={`border ${simulationStatus.className}`}>{simulationStatus.label}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-5 p-6">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-xl bg-white/80 p-4"><p className="text-xs font-bold uppercase text-indigo-700">Carência potencial</p><p className="mt-1 text-2xl font-black text-indigo-950">{simulation.potentialMonths} meses</p></div>
+                    <div className="rounded-xl bg-white/80 p-4"><p className="text-xs font-bold uppercase text-indigo-700">Requisito isolado</p><p className="mt-1 text-2xl font-black text-indigo-950">{simulation.requirement} meses</p></div>
+                    <div className="rounded-xl bg-white/80 p-4"><p className="text-xs font-bold uppercase text-indigo-700">Faltam potencialmente</p><p className="mt-1 text-2xl font-black text-indigo-950">{simulation.remainingPotentialMonths} meses</p></div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-indigo-950">Memória de cálculo</p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-indigo-950/80">{simulation.calculationMemory.map((item: string, index: number) => <li key={index}>{item}</li>)}</ul>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div><p className="text-sm font-black text-indigo-950">Períodos considerados</p><p className="mt-1 text-sm text-indigo-950/75">{simulation.consideredPeriods.length ? simulation.consideredPeriods.join(", ") : "Nenhum período consolidado."}</p></div>
+                    <div><p className="text-sm font-black text-indigo-950">Períodos excluídos ou incertos</p><p className="mt-1 text-sm text-indigo-950/75">{simulation.excludedOrUncertainPeriods.length ? simulation.excludedOrUncertainPeriods.join(", ") : "Nenhum apontamento estrutural."}</p></div>
+                  </div>
+                  <div className="rounded-xl border border-indigo-200 bg-white/70 p-4"><p className="text-sm font-black text-indigo-950">Dados ausentes para uma conclusão</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-indigo-950/75">{simulation.missingData.map((item: string, index: number) => <li key={index}>{item}</li>)}</ul></div>
+                  <p className="text-xs leading-relaxed text-indigo-950/70"><strong>Fonte:</strong> {simulation.normativeSource}</p>
+                  <p className="text-sm font-semibold leading-relaxed text-indigo-950">{simulation.limitation}</p>
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {state.data.timeline?.length > 0 && (
             <Card className="border-2 shadow-lg overflow-hidden">
