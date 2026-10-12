@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    --background: 222.9 21.4% 95.1%;
+    --background: 210 30% 97%;
     --foreground: 224 71.4% 4.1%;
-    --card: 222.9 21.4% 95.1%;
+    --card: 0 0% 100%;
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
@@ -15,13 +15,13 @@
     --secondary: 220 14.3% 95.9%;
     --secondary-foreground: 220.9 39.3% 11%;
     --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
+    --muted-foreground: 220 12% 35%;
     --accent: 38 92% 50%; /* Dourado/Âmbar para destaque */
     --accent-foreground: 48 96% 6%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 220 14% 86%;
+    --input: 220 14% 86%;
     --ring: 216 91% 54%;
     --radius: 0.5rem;
 
@@ -36,24 +36,24 @@
   }
 
   .dark {
-    --background: 222 47% 11%; /* Azul escuro profundo */
+    --background: 222 38% 9%; /* Azul escuro profundo */
     --foreground: 210 40% 98%;
-    --card: 222 47% 14%;
+    --card: 222 32% 15%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
+    --popover: 222 32% 13%;
     --popover-foreground: 210 40% 98%;
     --primary: 216 91% 54%;
     --primary-foreground: 210 20% 98%;
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 20%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 217 30% 21%;
+    --muted-foreground: 215 24% 78%;
     --accent: 38 92% 50%;
     --accent-foreground: 48 96% 6%;
     --destructive: 0 63% 41%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 25%;
-    --input: 217 33% 22%;
+    --border: 217 28% 31%;
+    --input: 217 28% 28%;
     --ring: 216 91% 54%;
 
     --sidebar-background: 222 47% 10%;
@@ -73,6 +73,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -100,5 +101,66 @@
 
   .group-data-\[collapsible\=icon\] [data-sidebar="menu-button"][data-active="true"]::before {
      @apply absolute left-1/2 top-auto bottom-0 h-1 w-4 -translate-x-1/2 scale-x-100 rounded-full bg-sidebar-primary transition-transform;
+  }
+}
+
+@layer utilities {
+  .dark .cnis-report [class*="bg-white"] {
+    background-color: hsl(var(--card)) !important;
+  }
+
+  .dark .cnis-report [class*="bg-slate-50"],
+  .dark .cnis-report [class*="bg-slate-100"] {
+    background-color: hsl(var(--muted)) !important;
+  }
+
+  .dark .cnis-report [class*="text-slate-900"],
+  .dark .cnis-report [class*="text-slate-800"],
+  .dark .cnis-report [class*="text-blue-950"] {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .dark .cnis-report [class*="text-slate-700"],
+  .dark .cnis-report [class*="text-slate-600"],
+  .dark .cnis-report [class*="text-slate-500"] {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  .dark .cnis-report [class*="bg-blue-50"] {
+    background-color: hsl(217 48% 19%) !important;
+  }
+
+  .dark .cnis-report [class*="bg-emerald-50"] {
+    background-color: hsl(158 42% 17%) !important;
+  }
+
+  .dark .cnis-report [class*="bg-amber-50"] {
+    background-color: hsl(38 45% 18%) !important;
+  }
+
+  .dark .cnis-report [class*="bg-indigo-50"] {
+    background-color: hsl(231 42% 20%) !important;
+  }
+
+  .dark .cnis-report [class*="text-blue-900"],
+  .dark .cnis-report [class*="text-blue-800"],
+  .dark .cnis-report [class*="text-blue-700"] {
+    color: hsl(213 94% 78%) !important;
+  }
+
+  .dark .cnis-report [class*="text-emerald-900"],
+  .dark .cnis-report [class*="text-emerald-800"],
+  .dark .cnis-report [class*="text-emerald-700"] {
+    color: hsl(158 70% 75%) !important;
+  }
+
+  .dark .cnis-report [class*="text-amber-900"],
+  .dark .cnis-report [class*="text-amber-800"],
+  .dark .cnis-report [class*="text-amber-700"] {
+    color: hsl(43 96% 76%) !important;
+  }
+
+  .dark .cnis-report [class*="text-indigo-950"] {
+    color: hsl(226 100% 90%) !important;
   }
 }

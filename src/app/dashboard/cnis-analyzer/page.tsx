@@ -231,7 +231,7 @@ export default function CnisAnalyzerPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 pb-20">
+    <div className="cnis-report max-w-5xl mx-auto space-y-10 pb-20">
       {!state.data && (
         <>
       <header className="text-center space-y-4">

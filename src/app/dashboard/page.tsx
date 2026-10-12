@@ -88,7 +88,7 @@ export default function DashboardPage() {
       <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-bold uppercase tracking-widest text-primary">Ferramentas</p>
-          <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-900">Por onde você quer começar?</h2>
+          <h2 className="mt-1 text-2xl font-black tracking-tight text-foreground">Por onde você quer começar?</h2>
         </div>
         <p className="text-sm text-muted-foreground">Escolha uma ferramenta para continuar.</p>
       </div>
@@ -97,17 +97,17 @@ export default function DashboardPage() {
         {featuredTools.map((tool) => {
           const Icon = tool.icon;
           return (
-            <Card key={tool.href} className="group relative overflow-hidden border-0 bg-white shadow-sm ring-1 ring-slate-200/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+            <Card key={tool.href} className="group relative overflow-hidden border-0 bg-card shadow-sm ring-1 ring-border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
               <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${tool.tone}`} />
               <CardHeader className="flex flex-row items-start justify-between gap-4 p-6 pb-3 sm:p-8 sm:pb-4">
                 <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${tool.tone} text-white shadow-lg`}>
                   <Icon className="h-7 w-7" />
                 </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-slate-500">{tool.eyebrow}</span>
+                <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-black uppercase tracking-wider text-muted-foreground">{tool.eyebrow}</span>
               </CardHeader>
               <CardContent className="p-6 pt-2 sm:p-8 sm:pt-2">
-                <CardTitle className="text-2xl font-black text-slate-900">{tool.title}</CardTitle>
-                <CardDescription className="mt-3 min-h-[3.5rem] text-base leading-relaxed text-slate-600">{tool.description}</CardDescription>
+                <CardTitle className="text-2xl font-black text-card-foreground">{tool.title}</CardTitle>
+                <CardDescription className="mt-3 min-h-[3.5rem] text-base leading-relaxed text-muted-foreground">{tool.description}</CardDescription>
                 <Link href={tool.href} className="mt-6 block">
                   <Button className="h-12 w-full justify-between px-5 font-bold sm:w-auto sm:min-w-52">
                     {tool.cta} <ArrowUpRight className="h-5 w-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -123,12 +123,12 @@ export default function DashboardPage() {
         {helpCards.map((card) => {
           const Icon = card.icon;
           return (
-            <Card key={card.title} className="border-0 bg-white/70 shadow-sm ring-1 ring-slate-200/70">
+            <Card key={card.title} className="border-0 bg-card/70 shadow-sm ring-1 ring-border">
               <CardHeader className="flex flex-row items-center gap-3 space-y-0 p-5 pb-2">
                 <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.color}`}><Icon className="h-5 w-5" /></div>
-                <CardTitle className="text-base font-extrabold text-slate-800">{card.title}</CardTitle>
+                <CardTitle className="text-base font-extrabold text-card-foreground">{card.title}</CardTitle>
               </CardHeader>
-              <CardContent className="p-5 pt-2"><p className="text-sm leading-relaxed text-slate-600">{card.description}</p></CardContent>
+              <CardContent className="p-5 pt-2"><p className="text-sm leading-relaxed text-muted-foreground">{card.description}</p></CardContent>
             </Card>
           );
         })}

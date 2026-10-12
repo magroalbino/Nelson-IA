@@ -71,7 +71,7 @@ export function FileUploadCard({
     <Card 
       className={`relative border-2 border-dashed transition-all duration-200 ${
         isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/20"
-      } ${selectedFile ? "bg-muted/30" : "bg-white"}`}
+      } ${selectedFile ? "bg-muted/30" : "bg-card"}`}
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={onDrop}
@@ -92,8 +92,8 @@ export function FileUploadCard({
               <FileCheck className="w-8 h-8" />
             </div>
             <div>
-              <p className="font-bold text-lg text-slate-900">{selectedFile.name}</p>
-              <p className="text-sm text-slate-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p className="font-bold text-lg text-foreground break-all">{selectedFile.name}</p>
+              <p className="text-sm text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
             <Button variant="outline" size="sm" onClick={removeFile} className="mt-2 text-destructive hover:bg-destructive/10">
               <X className="w-4 h-4 mr-2" /> Remover Arquivo
@@ -105,8 +105,8 @@ export function FileUploadCard({
               <UploadCloud className="w-8 h-8" />
             </div>
             <div>
-              <p className="font-bold text-xl text-slate-900">Clique ou arraste o documento</p>
-              <p className="text-slate-500 mt-1">Suporta PDF, DOC e DOCX (Máx. {maxSizeMB}MB)</p>
+              <p className="font-bold text-xl text-foreground">Clique ou arraste o documento</p>
+              <p className="text-muted-foreground mt-1">Suporta PDF, DOC e DOCX (Máx. {maxSizeMB}MB)</p>
             </div>
             <Button onClick={() => fileInputRef.current?.click()} type="button" size="lg" className="mt-2 font-bold">
               Selecionar Arquivo
