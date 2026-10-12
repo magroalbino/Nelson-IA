@@ -180,7 +180,7 @@ export async function extractCnisFacts(pdf: Buffer): Promise<CnisFacts> {
   const competencies = unique([...text.matchAll(MONTH_RE)].map((match) => `${match[1]}/${match[2]}`));
   const indicators = unique([...text.matchAll(INDICATOR_RE)].map((match) => match[0].toUpperCase()));
 
-  if (text.length >= 250) {
+  if (text.length >= 80) {
     const periods = inferPeriods(textPages);
     return { text, pages: parsed.numpages, pageTexts: textPages, competencies, indicators, periods, evidence: findEvidence(textPages, competencies, indicators, periods), structured, extractedByOcr: false };
   }
@@ -198,6 +198,7 @@ function inferPeriods(pageTexts: string[]): CnisPeriod[] {
   const periods: CnisPeriod[] = [];
   for (let pageIndex = 0; pageIndex < pageTexts.length; pageIndex += 1) {
     for (const line of pageTexts[pageIndex].split("\n")) {
+      if (!/(per[ií]odo|v[ií]nculo|in[ií]cio|fim)/i.test(line)) continue;
       const dates = [...line.matchAll(MONTH_RE)].map((match) => `${match[1]}/${match[2]}`);
       if (dates.length >= 2) periods.push({ start: dates[0], end: dates[1], source: line.slice(0, 180), page: pageIndex + 1 });
     }
@@ -265,7 +266,7 @@ function buildDeterministicFallback(facts: CnisFacts, reason: string): CnisAnaly
     recommendations: ["Confira as tabelas e as páginas de origem no CNIS original.", "Separe documentos dos períodos apontados como lacuna ou inconsistência.", "Leve o relatório a um profissional previdenciário para validação."],
     nextSteps: ["Revisar lacunas, sobreposições e competências fora dos períodos.", "Validar indicadores e valores de contribuição.", "Refazer a análise quando houver um PDF mais legível, se necessário."],
   };
-  return CnisAnalysisSchema.parse({ ...fallback, ...metrics, auditFindings, timeline, structured: facts.structured, simulation, reason });
+  return CnisAnalysisSchema.parse({ ...fallback, ...metrics, competenciasIdentificadas: metrics.competenciesIdentified, auditFindings, timeline, structured: facts.structured, simulation, reason });
 }
 
 export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAnalysis> {
@@ -306,13 +307,12 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
       } catch (error) {
         response = undefined;
         lastStatus = 504;
-        console.error(`[GEMINI] modelo=${candidate} falhou antes de responder:`, error instanceof Error ? error.message : error);
+        console.error("[GEMINI] Falha operacional", { model: candidate, attempt: attempt + 1, errorType: error instanceof Error ? error.name : "unknown_error" });
         continue;
       }
       if (response.ok) break;
       lastStatus = response.status;
-      const details = await response.text();
-      console.error(`[GEMINI] modelo=${candidate} tentativa=${attempt + 1} HTTP ${response.status}:`, details);
+      console.error("[GEMINI] Falha na chamada", { model: candidate, attempt: attempt + 1, status: response.status });
       if (![429, 500, 502, 503, 504].includes(response.status)) break;
       if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 700));
     }
@@ -324,9 +324,9 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
     const raw = body.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!raw) return buildDeterministicFallback(facts, "Resposta vazia da Gemini");
     const parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, ""));
-    return CnisAnalysisSchema.parse({ ...parsed, estimativaAposentadoria: normalizeEstimate(parsed.estimativaAposentadoria), ...metrics, auditFindings, timeline, structured: facts.structured, simulation, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
+    return CnisAnalysisSchema.parse({ ...parsed, estimativaAposentadoria: normalizeEstimate(parsed.estimativaAposentadoria), ...metrics, competenciasIdentificadas: metrics.competenciesIdentified, auditFindings, timeline, structured: facts.structured, simulation, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
   } catch (error) {
-    console.error("[GEMINI] resposta inválida; usando fallback determinístico", error instanceof Error ? error.message : error);
+    console.error("[GEMINI] Resposta inválida; usando fallback determinístico", { errorType: error instanceof Error ? error.name : "unknown_error" });
     return buildDeterministicFallback(facts, "Resposta inválida da Gemini");
   }
 }

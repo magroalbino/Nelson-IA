@@ -3,6 +3,7 @@ const LONG_IDENTIFIER_RE = /\b\d{10,14}\b/g;
 const LABELLED_NAME_RE = /((?:nome(?: completo)?|nome do segurado|nome da mãe|mãe|titular)\s*:\s*)([^\n;|]+)/gi;
 const SENSITIVE_LABEL_RE = /((?:cpf|nit|nis|pis|pasep|rg|endereço|endereco|telefone|celular|e-?mail|n[uú]mero do benef[ií]cio|protocolo|processo)\s*[:#-]?\s*)([^\n;|]+)/gi;
 const BASE64_RE = /data:[^;]+;base64,[a-z0-9+/=\s]+/gi;
+const SENSITIVE_PAYLOAD_KEYS = new Set(["fileName", "pdf", "pdfBase64", "document", "documentBytes", "rawPdf", "rawText", "textIntegral"]);
 
 export function sanitizeSensitiveText(value: string): string {
   return value
@@ -22,7 +23,7 @@ function sanitizeValue(value: unknown): unknown {
   if (typeof value === "string") return sanitizeSensitiveText(value);
   if (Array.isArray(value)) return value.map(sanitizeValue);
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitizeValue(item)]));
+    return Object.fromEntries(Object.entries(value).filter(([key]) => !SENSITIVE_PAYLOAD_KEYS.has(key)).map(([key, item]) => [key, sanitizeValue(item)]));
   }
   return value;
 }
