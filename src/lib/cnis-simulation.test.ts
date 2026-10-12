@@ -35,4 +35,24 @@ describe("simulação verificável de carência da aposentadoria programada", ()
     expect(result.status).toBe("conferencia_necessaria");
     expect(result.excludedOrUncertainPeriods.some((item) => item.includes("lacuna"))).toBe(true);
   });
+
+  it("registra sobreposição como período incerto, sem duplicar a carência potencial", () => {
+    const result = simulation(months(180), [period("01/2010", "12/2015"), period("01/2015", "12/2024")]);
+    expect(result.status).toBe("conferencia_necessaria");
+    expect(result.excludedOrUncertainPeriods.some((item) => item.includes("sobreposição"))).toBe(true);
+    expect(result.potentialMonths).toBe(180);
+  });
+
+  it("mantém contribuição não confirmada separada da carência potencial", () => {
+    const result = simulation(months(180), [period("01/2010", "12/2024")]);
+    expect(result.confirmedMonths).toBe(0);
+    expect(result.calculationMemory[2]).toContain("confirmadas automaticamente");
+    expect(result.limitation.toLowerCase()).toContain("não confirma");
+  });
+
+  it("classifica o resultado como conferência necessária quando há hipótese estrutural", () => {
+    const result = simulation(months(180), [period("01/2010", "12/2024"), period("13/2020", "12/2020")]);
+    expect(result.status).toBe("conferencia_necessaria");
+    expect(result.excludedOrUncertainPeriods.some((item) => item.includes("período inválido"))).toBe(true);
+  });
 });
