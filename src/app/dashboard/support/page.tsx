@@ -37,17 +37,17 @@ export default function SupportPage() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="border-0 bg-blue-50 shadow-sm ring-1 ring-blue-100">
-          <CardHeader><FileScan className="h-7 w-7 text-blue-600" /><CardTitle className="text-lg">Analisar CNIS</CardTitle></CardHeader>
-          <CardContent><CardDescription className="mb-4 text-slate-600">Envie seu PDF e veja tempo, carência, pendências e recomendações.</CardDescription><Link href="/dashboard/cnis-analyzer"><Button className="font-bold">Abrir analisador <ArrowRight className="ml-2 h-4 w-4" /></Button></Link></CardContent>
+        <Card className="border-0 bg-blue-50 shadow-sm ring-1 ring-blue-100 dark:bg-blue-950/45 dark:ring-blue-800">
+          <CardHeader><FileScan className="h-7 w-7 text-blue-600 dark:text-blue-300" /><CardTitle className="text-lg text-slate-900 dark:text-white">Analisar CNIS</CardTitle></CardHeader>
+          <CardContent><CardDescription className="mb-4 text-slate-700 dark:text-blue-100">Envie seu PDF e veja tempo, carência, pendências e recomendações.</CardDescription><Link href="/dashboard/cnis-analyzer"><Button className="font-bold">Abrir analisador <ArrowRight className="ml-2 h-4 w-4" /></Button></Link></CardContent>
         </Card>
-        <Card className="border-0 bg-emerald-50 shadow-sm ring-1 ring-emerald-100">
-          <CardHeader><ShieldCheck className="h-7 w-7 text-emerald-600" /><CardTitle className="text-lg">Boas práticas</CardTitle></CardHeader>
-          <CardContent><CardDescription className="text-slate-600">Use documentos oficiais, legíveis e confira as estimativas antes de tomar decisões.</CardDescription></CardContent>
+        <Card className="border-0 bg-emerald-50 shadow-sm ring-1 ring-emerald-100 dark:bg-emerald-950/45 dark:ring-emerald-800">
+          <CardHeader><ShieldCheck className="h-7 w-7 text-emerald-600 dark:text-emerald-300" /><CardTitle className="text-lg text-slate-900 dark:text-white">Boas práticas</CardTitle></CardHeader>
+          <CardContent><CardDescription className="text-slate-700 dark:text-emerald-100">Use documentos oficiais, legíveis e confira as estimativas antes de tomar decisões.</CardDescription></CardContent>
         </Card>
-        <Card className="border-0 bg-amber-50 shadow-sm ring-1 ring-amber-100">
-          <CardHeader><MessageSquare className="h-7 w-7 text-amber-600" /><CardTitle className="text-lg">Relatar problema</CardTitle></CardHeader>
-          <CardContent><CardDescription className="mb-4 text-slate-600">Registre erros técnicos, incluindo a mensagem e a etapa em que aconteceram.</CardDescription><a href="https://github.com/magroalbino/Nelson-IA/issues" target="_blank" rel="noreferrer"><Button variant="outline" className="border-amber-300 bg-white font-bold text-amber-800 hover:bg-amber-100">Abrir canal de suporte <ArrowRight className="ml-2 h-4 w-4" /></Button></a></CardContent>
+        <Card className="border-0 bg-amber-50 shadow-sm ring-1 ring-amber-100 dark:bg-amber-950/45 dark:ring-amber-800">
+          <CardHeader><MessageSquare className="h-7 w-7 text-amber-600 dark:text-amber-300" /><CardTitle className="text-lg text-slate-900 dark:text-white">Relatar problema</CardTitle></CardHeader>
+          <CardContent><CardDescription className="mb-4 text-slate-700 dark:text-amber-100">Registre erros técnicos, incluindo a mensagem e a etapa em que aconteceram.</CardDescription><a href="https://github.com/magroalbino/Nelson-IA/issues" target="_blank" rel="noreferrer"><Button variant="outline" className="border-amber-300 bg-white font-bold text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100 dark:hover:bg-amber-900">Abrir canal de suporte <ArrowRight className="ml-2 h-4 w-4" /></Button></a></CardContent>
         </Card>
       </section>
 
