@@ -9,7 +9,8 @@ import { deleteSavedCnisAnalysis, listSavedCnisAnalyses, type SavedCnisAnalysis 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Loader2, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
+import { FileText, Loader2, RefreshCw, ShieldAlert, Trash2, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function HistoryPage() {
   const [loadingItems, setLoadingItems] = useState(false);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<SavedCnisAnalysis | null>(null);
 
   const loadItems = async () => {
     if (!user) return;
@@ -73,14 +75,46 @@ export default function HistoryPage() {
 
       {!error && !loadingItems && !items.length && <Card><CardContent className="flex flex-col items-center gap-4 p-10 text-center"><FileText className="h-12 w-12 text-primary/50" /><h2 className="text-xl font-bold">Nenhuma análise salva ainda</h2><p className="max-w-md text-muted-foreground">Faça uma análise enquanto estiver conectado à sua conta para encontrá-la aqui.</p><Button asChild><Link href="/dashboard/cnis-analyzer">Analisar um CNIS</Link></Button></CardContent></Card>}
 
+      {!error && !loadingItems && items.length > 0 && <p className="text-sm text-muted-foreground">{items.length} {items.length === 1 ? "análise salva" : "análises salvas"}. Selecione uma para visualizar os detalhes.</p>}
+
       <div className="grid gap-5 md:grid-cols-2">
         {items.map((item) => (
           <Card key={item.id} className="border-2 shadow-sm transition-shadow hover:shadow-lg">
             <CardHeader className="space-y-2"><div className="flex items-start justify-between gap-4"><CardTitle className="flex min-w-0 items-center gap-2 text-lg"><FileText className="h-5 w-5 shrink-0 text-primary" /><span className="truncate">{item.fileName}</span></CardTitle><Badge variant="outline">{item.qualityScore}% leitura</Badge></div><p className="text-sm text-muted-foreground">{item.createdAt ? item.createdAt.toLocaleString("pt-BR") : "Data em processamento"}</p></CardHeader>
-            <CardContent className="space-y-3"><div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg bg-muted/50 p-3"><p className="text-muted-foreground">Tempo identificado</p><p className="font-bold">{item.tempoContribuicaoTotal}</p></div><div className="rounded-lg bg-muted/50 p-3"><p className="text-muted-foreground">Carência potencial</p><p className="font-bold">{item.carenciaTotal} competências</p></div></div><p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{item.summary}</p><Button type="button" variant="outline" className="w-full border-destructive/40 text-destructive hover:bg-destructive/10" disabled={deletingId === item.id} onClick={() => void handleDelete(item)}><Trash2 className="mr-2 h-4 w-4" />{deletingId === item.id ? "Excluindo…" : "Excluir análise"}</Button></CardContent>
+            <CardContent className="space-y-3"><div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg bg-muted/50 p-3"><p className="text-muted-foreground">Tempo identificado</p><p className="font-bold">{item.tempoContribuicaoTotal}</p></div><div className="rounded-lg bg-muted/50 p-3"><p className="text-muted-foreground">Carência potencial</p><p className="font-bold">{item.carenciaTotal} competências</p></div></div><p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{item.summary}</p><div className="grid grid-cols-1 gap-2 sm:grid-cols-2"><Button type="button" variant="outline" onClick={() => setSelectedItem(item)}><Eye className="mr-2 h-4 w-4" />Visualizar análise</Button><Button type="button" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" disabled={deletingId === item.id} onClick={() => void handleDelete(item)}><Trash2 className="mr-2 h-4 w-4" />{deletingId === item.id ? "Excluindo…" : "Excluir análise"}</Button></div></CardContent>
           </Card>
         ))}
       </div>
+
+      <Dialog open={Boolean(selectedItem)} onOpenChange={(open) => { if (!open) setSelectedItem(null); }}>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+          {selectedItem && (() => {
+            const analysis = selectedItem.analysis as any;
+            const structured = analysis.structured || {};
+            const findings = Array.isArray(analysis.auditFindings) ? analysis.auditFindings : [];
+            const timeline = Array.isArray(analysis.timeline) ? analysis.timeline : [];
+            return <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl text-primary">Análise salva</DialogTitle>
+                <DialogDescription>{selectedItem.fileName} · {selectedItem.createdAt ? selectedItem.createdAt.toLocaleString("pt-BR") : "Data em processamento"}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-5">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl bg-muted/50 p-4"><p className="text-xs font-bold uppercase text-muted-foreground">Tempo</p><p className="mt-1 font-bold">{selectedItem.tempoContribuicaoTotal}</p></div>
+                  <div className="rounded-xl bg-muted/50 p-4"><p className="text-xs font-bold uppercase text-muted-foreground">Carência potencial</p><p className="mt-1 font-bold">{selectedItem.carenciaTotal} competências</p></div>
+                  <div className="rounded-xl bg-muted/50 p-4"><p className="text-xs font-bold uppercase text-muted-foreground">Qualidade</p><p className="mt-1 font-bold">{selectedItem.qualityScore}%</p></div>
+                </div>
+                <section className="space-y-2"><h3 className="font-bold">Resumo</h3><p className="text-sm leading-relaxed text-muted-foreground">{selectedItem.summary}</p></section>
+                <section className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Vínculos</p><p className="text-2xl font-black">{Array.isArray(structured.employments) ? structured.employments.length : 0}</p></div><div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Contribuições</p><p className="text-2xl font-black">{Array.isArray(structured.contributions) ? structured.contributions.length : 0}</p></div><div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Benefícios</p><p className="text-2xl font-black">{Array.isArray(structured.benefits) ? structured.benefits.length : 0}</p></div></section>
+                {findings.length > 0 && <section className="space-y-2"><h3 className="font-bold">Pontos para conferir</h3><ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">{findings.map((finding: any, index: number) => <li key={`${finding.title || "ponto"}-${index}`}>{finding.title || finding.description || "Ponto identificado"}</li>)}</ul></section>}
+                {timeline.length > 0 && <section className="space-y-2"><h3 className="font-bold">Linha do tempo</h3><div className="space-y-2">{timeline.map((event: any, index: number) => <div key={`${event.title || "evento"}-${index}`} className="rounded-lg border p-3"><p className="font-semibold">{event.title || "Evento identificado"}</p><p className="text-sm text-muted-foreground">{event.period || "Período não identificado"} · {event.detail || ""}</p></div>)}</div></section>}
+                <details className="rounded-xl border p-4"><summary className="cursor-pointer font-bold">Ver dados estruturados completos</summary><pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-muted p-3 text-xs">{JSON.stringify(selectedItem.analysis, null, 2)}</pre></details>
+                <p className="text-xs text-muted-foreground">O PDF original não é armazenado. Esta visualização usa somente os dados estruturados salvos na sua conta.</p>
+              </div>
+            </>;
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

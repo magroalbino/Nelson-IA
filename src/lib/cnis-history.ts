@@ -6,7 +6,6 @@ import {
   deleteDoc,
   doc,
   getDocs,
-  limit,
   query,
   serverTimestamp,
   where,
@@ -51,7 +50,6 @@ export async function listSavedCnisAnalyses(user: User): Promise<SavedCnisAnalys
     query(
       collection(db, "cnisAnalyses"),
       where("uid", "==", user.uid),
-      limit(50),
     ),
   );
 
