@@ -74,6 +74,7 @@ export default function CnisAnalyzerPage() {
   const [pending, setPending] = useState(false);
   const [uploadKey, setUploadKey] = useState(0);
   const [user] = useAuthState(auth);
+  const [persistenceStatus, setPersistenceStatus] = useState<"saving" | "saved" | "failed" | null>(null);
 
   const handleFileSelect = (file: File | null) => {
     setCnisDocument(file);
@@ -85,6 +86,7 @@ export default function CnisAnalyzerPage() {
     if (!cnisDocument || pending) return;
     setPending(true);
     setState(initialState);
+    setPersistenceStatus(user ? "saving" : null);
     try {
       const formData = new FormData();
       formData.append("cnisDocument", cnisDocument, cnisDocument.name);
@@ -94,14 +96,30 @@ export default function CnisAnalyzerPage() {
       if (response.ok && result.data && user) {
         try {
           await saveCnisAnalysis(user, result.data, cnisDocument.name);
+          setPersistenceStatus("saved");
         } catch (error) {
-          console.error("[CNIS] Não foi possível salvar a análise:", error);
+          console.error("[CNIS] Falha ao salvar análise autenticada:", error instanceof Error ? error.name : "erro operacional");
+          setPersistenceStatus("failed");
         }
       }
     } catch {
       setState({ message: "Não foi possível conectar ao servidor de análise.", data: null, errors: { cnisDocument: ["Erro de conexão"] } });
     } finally {
       setPending(false);
+    }
+  };
+
+  const retryPersistence = async () => {
+    if (!user || !state.data || !cnisDocument) return;
+    setPersistenceStatus("saving");
+    try {
+      await saveCnisAnalysis(user, state.data, cnisDocument.name);
+      setPersistenceStatus("saved");
+      toast({ title: "Análise salva", description: "O resultado estruturado foi salvo na sua conta." });
+    } catch (error) {
+      console.error("[CNIS] Falha ao repetir salvamento autenticado:", error instanceof Error ? error.name : "erro operacional");
+      setPersistenceStatus("failed");
+      toast({ title: "Não foi possível salvar", description: "Verifique sua conexão e as regras de acesso do Firestore.", variant: "destructive" });
     }
   };
   
@@ -305,6 +323,18 @@ export default function CnisAnalyzerPage() {
               Fazer nova análise
             </Button>
           </div>
+          {user && persistenceStatus === "saving" && (
+            <p role="status" className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-primary">Salvando os dados estruturados na sua conta…</p>
+          )}
+          {user && persistenceStatus === "saved" && (
+            <p role="status" className="rounded-xl border border-emerald-300/40 bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">Análise salva na sua conta. O PDF original não foi armazenado.</p>
+          )}
+          {user && persistenceStatus === "failed" && (
+            <div role="alert" className="flex flex-col gap-3 rounded-xl border border-amber-300/50 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:bg-amber-950/30 dark:text-amber-100">
+              <span>A análise foi concluída, mas não conseguimos salvar o resultado na sua conta.</span>
+              <Button type="button" variant="outline" onClick={retryPersistence} className="shrink-0 border-amber-400 font-bold">Tentar salvar novamente</Button>
+            </div>
+          )}
           
           {/* Dashboard de Resumo Rápido */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
