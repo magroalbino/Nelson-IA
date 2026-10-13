@@ -3,6 +3,8 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   getDocs,
   limit,
   query,
@@ -67,4 +69,9 @@ export async function listSavedCnisAnalyses(user: User): Promise<SavedCnisAnalys
       analysis: (data.analysis ?? {}) as Record<string, unknown>,
     };
   }).sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
+}
+
+export async function deleteSavedCnisAnalysis(user: User, analysisId: string) {
+  if (!analysisId.trim()) throw new Error("Identificador de análise inválido.");
+  await deleteDoc(doc(db, "cnisAnalyses", analysisId));
 }
