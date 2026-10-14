@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { jsPDF } from "jspdf";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -9,7 +10,7 @@ import { deleteSavedCnisAnalysis, listSavedCnisAnalyses, type SavedCnisAnalysis 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Loader2, RefreshCw, ShieldAlert, Trash2, Eye } from "lucide-react";
+import { Download, FileText, Loader2, RefreshCw, ShieldAlert, Trash2, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function HistoryPage() {
@@ -52,6 +53,64 @@ export default function HistoryPage() {
     }
   };
 
+  const downloadSavedPdf = (item: SavedCnisAnalysis) => {
+    const pdf = new jsPDF({ unit: "mm", format: "a4" });
+    const margin = 17;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    let y = 20;
+    const analysis = item.analysis as any;
+    const structured = analysis.structured || {};
+    const findings = Array.isArray(analysis.auditFindings) ? analysis.auditFindings : [];
+    const timeline = Array.isArray(analysis.timeline) ? analysis.timeline : [];
+    const recommendations = Array.isArray(analysis.recommendations) ? analysis.recommendations : [];
+    const nextSteps = Array.isArray(analysis.nextSteps) ? analysis.nextSteps : [];
+
+    const ensureSpace = (height: number) => {
+      if (y + height > pageHeight - margin) {
+        pdf.addPage();
+        y = 20;
+      }
+    };
+    const write = (text: string, size = 10, bold = false) => {
+      const lines = pdf.splitTextToSize(String(text || ""), pageWidth - margin * 2);
+      ensureSpace(lines.length * (size * 0.48) + 5);
+      pdf.setFont("helvetica", bold ? "bold" : "normal");
+      pdf.setFontSize(size);
+      pdf.setTextColor(35, 45, 65);
+      pdf.text(lines, margin, y);
+      y += lines.length * (size * 0.48) + 5;
+    };
+    const heading = (text: string) => { ensureSpace(14); pdf.setFont("helvetica", "bold"); pdf.setFontSize(13); pdf.setTextColor(20, 87, 170); pdf.text(text, margin, y); y += 8; };
+
+    pdf.setFillColor(20, 87, 170);
+    pdf.rect(0, 0, pageWidth, 12, "F");
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.text("NELSON IA · ANÁLISE SALVA", margin, 8);
+    y = 24;
+    write("Relatório de análise do CNIS", 20, true);
+    write(`${item.fileName} · ${item.createdAt ? item.createdAt.toLocaleString("pt-BR") : "Data não identificada"}`, 9);
+    heading("Resumo");
+    write(item.summary, 10);
+    heading("Indicadores principais");
+    write(`Tempo identificado: ${item.tempoContribuicaoTotal}`);
+    write(`Carência potencial: ${item.carenciaTotal} competências`);
+    write(`Qualidade da leitura: ${item.qualityScore}%`);
+    write(`Vínculos: ${Array.isArray(structured.employments) ? structured.employments.length : 0} · Contribuições: ${Array.isArray(structured.contributions) ? structured.contributions.length : 0} · Benefícios: ${Array.isArray(structured.benefits) ? structured.benefits.length : 0}`);
+    if (findings.length) { heading("Pontos para conferir"); findings.forEach((finding: any, index: number) => write(`${index + 1}. ${finding.title || finding.description || "Ponto identificado"}`)); }
+    if (timeline.length) { heading("Linha do tempo"); timeline.forEach((event: any) => write(`${event.title || "Evento"} — ${event.period || "Período não identificado"}. ${event.detail || ""}`)); }
+    if (recommendations.length) { heading("Recomendações"); recommendations.forEach((value: string, index: number) => write(`${index + 1}. ${value}`)); }
+    if (nextSteps.length) { heading("Próximos passos"); nextSteps.forEach((value: string, index: number) => write(`${index + 1}. ${value}`)); }
+    ensureSpace(18);
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(8);
+    pdf.setTextColor(90, 100, 115);
+    pdf.text("Relatório informativo. O PDF original do CNIS não é armazenado nesta análise.", margin, pageHeight - 12);
+    pdf.save(`relatorio-cnis-${item.createdAt ? item.createdAt.toISOString().slice(0, 10) : "salvo"}.pdf`);
+  };
+
   useEffect(() => {
     if (!loading && !user) router.replace("/account");
     if (user) void loadItems();
@@ -81,7 +140,7 @@ export default function HistoryPage() {
         {items.map((item) => (
           <Card key={item.id} className="border-2 shadow-sm transition-shadow hover:shadow-lg">
             <CardHeader className="space-y-2"><div className="flex items-start justify-between gap-4"><CardTitle className="flex min-w-0 items-center gap-2 text-lg"><FileText className="h-5 w-5 shrink-0 text-primary" /><span className="truncate">{item.fileName}</span></CardTitle><Badge variant="outline">{item.qualityScore}% leitura</Badge></div><p className="text-sm text-muted-foreground">{item.createdAt ? item.createdAt.toLocaleString("pt-BR") : "Data em processamento"}</p></CardHeader>
-            <CardContent className="space-y-3"><div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg bg-muted/50 p-3"><p className="text-muted-foreground">Tempo identificado</p><p className="font-bold">{item.tempoContribuicaoTotal}</p></div><div className="rounded-lg bg-muted/50 p-3"><p className="text-muted-foreground">Carência potencial</p><p className="font-bold">{item.carenciaTotal} competências</p></div></div><p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{item.summary}</p><div className="grid grid-cols-1 gap-2 sm:grid-cols-2"><Button type="button" variant="outline" onClick={() => setSelectedItem(item)}><Eye className="mr-2 h-4 w-4" />Visualizar análise</Button><Button type="button" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" disabled={deletingId === item.id} onClick={() => void handleDelete(item)}><Trash2 className="mr-2 h-4 w-4" />{deletingId === item.id ? "Excluindo…" : "Excluir análise"}</Button></div></CardContent>
+            <CardContent className="space-y-3"><div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg bg-muted/50 p-3"><p className="text-muted-foreground">Tempo identificado</p><p className="font-bold">{item.tempoContribuicaoTotal}</p></div><div className="rounded-lg bg-muted/50 p-3"><p className="text-muted-foreground">Carência potencial</p><p className="font-bold">{item.carenciaTotal} competências</p></div></div><p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{item.summary}</p><div className="grid grid-cols-1 gap-2 sm:grid-cols-3"><Button type="button" variant="outline" onClick={() => setSelectedItem(item)}><Eye className="mr-2 h-4 w-4" />Visualizar</Button><Button type="button" variant="outline" onClick={() => downloadSavedPdf(item)}><Download className="mr-2 h-4 w-4" />Baixar PDF</Button><Button type="button" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" disabled={deletingId === item.id} onClick={() => void handleDelete(item)}><Trash2 className="mr-2 h-4 w-4" />{deletingId === item.id ? "Excluindo…" : "Excluir"}</Button></div></CardContent>
           </Card>
         ))}
       </div>
@@ -105,6 +164,7 @@ export default function HistoryPage() {
                   <div className="rounded-xl bg-muted/50 p-4"><p className="text-xs font-bold uppercase text-muted-foreground">Qualidade</p><p className="mt-1 font-bold">{selectedItem.qualityScore}%</p></div>
                 </div>
                 <section className="space-y-2"><h3 className="font-bold">Resumo</h3><p className="text-sm leading-relaxed text-muted-foreground">{selectedItem.summary}</p></section>
+                <Button type="button" onClick={() => downloadSavedPdf(selectedItem)} className="w-full sm:w-auto"><Download className="mr-2 h-4 w-4" />Baixar relatório em PDF</Button>
                 <section className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Vínculos</p><p className="text-2xl font-black">{Array.isArray(structured.employments) ? structured.employments.length : 0}</p></div><div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Contribuições</p><p className="text-2xl font-black">{Array.isArray(structured.contributions) ? structured.contributions.length : 0}</p></div><div className="rounded-xl border p-4"><p className="text-xs text-muted-foreground">Benefícios</p><p className="text-2xl font-black">{Array.isArray(structured.benefits) ? structured.benefits.length : 0}</p></div></section>
                 {findings.length > 0 && <section className="space-y-2"><h3 className="font-bold">Pontos para conferir</h3><ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">{findings.map((finding: any, index: number) => <li key={`${finding.title || "ponto"}-${index}`}>{finding.title || finding.description || "Ponto identificado"}</li>)}</ul></section>}
                 {timeline.length > 0 && <section className="space-y-2"><h3 className="font-bold">Linha do tempo</h3><div className="space-y-2">{timeline.map((event: any, index: number) => <div key={`${event.title || "evento"}-${index}`} className="rounded-lg border p-3"><p className="font-semibold">{event.title || "Evento identificado"}</p><p className="text-sm text-muted-foreground">{event.period || "Período não identificado"} · {event.detail || ""}</p></div>)}</div></section>}
