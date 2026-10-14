@@ -66,7 +66,7 @@ export default function DashboardPage() {
           <div className="max-w-2xl space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-blue-100 shadow-inner shadow-white/5">
               <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(52,211,153,0.15)]" />
-              Análise previdenciária simplificada
+              Seu painel previdenciário
             </div>
             <div className="space-y-3">
               <h1 className="max-w-2xl text-3xl font-black leading-[1.05] tracking-tight sm:text-4xl lg:text-[3.35rem]">Seu CNIS, explicado com clareza.</h1>
@@ -89,7 +89,6 @@ export default function DashboardPage() {
             <div className="absolute -inset-4 rounded-[2rem] bg-blue-400/10 blur-2xl" />
             <div className="relative flex w-56 flex-col items-center rounded-[1.75rem] border border-white/15 bg-white/[0.07] px-6 pb-5 pt-4 text-center shadow-2xl backdrop-blur-md">
               <Image src="/assets/logo-nelson-transparent.png" alt="Nelson IA" width={150} height={118} className="h-auto w-32 object-contain opacity-95" priority />
-              <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-blue-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Pronto para ajudar</div>
               <p className="mt-2 text-xs leading-relaxed text-slate-400">Uma leitura mais simples para decisões importantes.</p>
             </div>
           </div>
