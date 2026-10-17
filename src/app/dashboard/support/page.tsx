@@ -78,7 +78,7 @@ export default function SupportPage() {
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_0.8fr]">
         <Card className="border-0 bg-white shadow-sm ring-1 ring-slate-200">
-          <CardHeader><CardTitle className="text-2xl font-black text-slate-900">Perguntas frequentes</CardTitle><CardDescription>Respostas para as dúvidas mais comuns.</CardDescription></CardHeader>
+          <CardHeader><CardTitle className="text-2xl font-black text-slate-900 dark:text-white">Perguntas frequentes</CardTitle><CardDescription className="text-slate-600 dark:text-slate-300">Respostas para as dúvidas mais comuns.</CardDescription></CardHeader>
           <CardContent className="space-y-3">
             {faqs.map((faq) => (
               <details key={faq.question} className="group rounded-2xl border border-slate-200 bg-slate-50/60 p-4 open:bg-white open:shadow-sm">
