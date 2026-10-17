@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, FileScan, HelpCircle, MessageSquare, RefreshCw, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Copy, FileScan, HelpCircle, MessageSquare, RefreshCw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const faqs = [
   {
@@ -23,6 +27,27 @@ const faqs = [
 ];
 
 export default function SupportPage() {
+  const [reportOpen, setReportOpen] = useState(false);
+  const [category, setCategory] = useState("Análise do CNIS");
+  const [stage, setStage] = useState("Análise não foi concluída");
+  const [description, setDescription] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const reportBody = `## Relato técnico — Nelson IA\n\n**Categoria:** ${category}\n**Etapa:** ${stage}\n**Mensagem exibida:** ${errorMessage.trim() || "Não informada"}\n\n### O que aconteceu\n${description.trim() || "Não informado"}\n\n### Checklist de privacidade\n- Não contém CPF, nome, NIT, endereço ou telefone.\n- Não contém o PDF ou texto do CNIS.\n- Não contém senhas, tokens ou chaves.`;
+
+  const copyReport = async () => {
+    await navigator.clipboard.writeText(reportBody);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2200);
+  };
+
+  const openPublicIssue = () => {
+    const title = encodeURIComponent(`[${category}] ${stage}`);
+    const body = encodeURIComponent(reportBody);
+    window.open(`https://github.com/magroalbino/Nelson-IA/issues/new?title=${title}&body=${body}`, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-12">
       <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-xl sm:px-10 sm:py-10">
@@ -47,7 +72,7 @@ export default function SupportPage() {
         </Card>
         <Card className="border-0 bg-amber-50 shadow-sm ring-1 ring-amber-100 dark:bg-amber-950/45 dark:ring-amber-800">
           <CardHeader><MessageSquare className="h-7 w-7 text-amber-600 dark:text-amber-300" /><CardTitle className="text-lg text-slate-900 dark:text-white">Relatar problema</CardTitle></CardHeader>
-          <CardContent><CardDescription className="mb-4 text-slate-700 dark:text-amber-100">Registre erros técnicos, incluindo a mensagem e a etapa em que aconteceram.</CardDescription><a href="https://github.com/magroalbino/Nelson-IA/issues" target="_blank" rel="noreferrer"><Button variant="outline" className="border-amber-300 bg-white font-bold text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100 dark:hover:bg-amber-900">Abrir canal de suporte <ArrowRight className="ml-2 h-4 w-4" /></Button></a></CardContent>
+          <CardContent><CardDescription className="mb-4 text-slate-700 dark:text-amber-100">Prepare um relato técnico sem anexar o CNIS ou outros dados pessoais. Você revisa o texto antes de enviá-lo.</CardDescription><Button type="button" variant="outline" onClick={() => setReportOpen(true)} className="border-amber-300 bg-white font-bold text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100 dark:hover:bg-amber-900">Preparar relato seguro <ArrowRight className="ml-2 h-4 w-4" /></Button></CardContent>
         </Card>
       </section>
 
@@ -71,6 +96,29 @@ export default function SupportPage() {
           </CardContent>
         </Card>
       </section>
+
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-primary">Relatar um problema com segurança</DialogTitle>
+            <DialogDescription>Descreva apenas o comportamento técnico. Não inclua CPF, nome, NIT, número de benefício, PDF ou texto do CNIS.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="space-y-2 text-sm font-semibold">Categoria<select value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-normal"><option>Análise do CNIS</option><option>Login ou conta</option><option>Relatório ou PDF</option><option>Interface ou acessibilidade</option><option>Outro problema técnico</option></select></label>
+              <label className="space-y-2 text-sm font-semibold">Etapa<select value={stage} onChange={(event) => setStage(event.target.value)} className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-normal"><option>Upload do documento</option><option>Análise não foi concluída</option><option>Histórico ou exclusão</option><option>Download do relatório</option><option>Outra etapa</option></select></label>
+            </div>
+            <label className="block space-y-2 text-sm font-semibold">Mensagem exibida (opcional)<input value={errorMessage} onChange={(event) => setErrorMessage(event.target.value.slice(0, 240))} maxLength={240} placeholder="Ex.: Não foi possível analisar o documento" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-normal outline-none ring-offset-background focus:ring-2 focus:ring-ring" /></label>
+            <label className="block space-y-2 text-sm font-semibold">O que aconteceu?<textarea value={description} onChange={(event) => setDescription(event.target.value.slice(0, 1200))} maxLength={1200} rows={5} placeholder="Explique o passo a passo sem informar dados do segurado ou do documento." className="flex w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm font-normal outline-none ring-offset-background focus:ring-2 focus:ring-ring" /></label>
+            <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /><p>O GitHub é um canal público. Revise o texto e remova qualquer informação pessoal antes de abrir a issue.</p></div>
+            <div className="rounded-xl border bg-muted/30 p-4"><p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Prévia do relato</p><pre className="max-h-48 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-foreground">{reportBody}</pre></div>
+          </div>
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button type="button" variant="outline" onClick={() => void copyReport()}><Copy className="mr-2 h-4 w-4" />{copied ? "Copiado" : "Copiar relato"}</Button>
+            <Button type="button" onClick={openPublicIssue}>Revisar no GitHub <ArrowRight className="ml-2 h-4 w-4" /></Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
