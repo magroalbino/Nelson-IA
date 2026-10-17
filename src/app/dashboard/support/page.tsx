@@ -72,7 +72,7 @@ export default function SupportPage() {
         </Card>
         <Card className="border-0 bg-amber-50 shadow-sm ring-1 ring-amber-100 dark:bg-amber-950/45 dark:ring-amber-800">
           <CardHeader><MessageSquare className="h-7 w-7 text-amber-600 dark:text-amber-300" /><CardTitle className="text-lg text-slate-900 dark:text-white">Relatar problema</CardTitle></CardHeader>
-          <CardContent><CardDescription className="mb-4 text-slate-700 dark:text-amber-100">Prepare um relato técnico sem anexar o CNIS ou outros dados pessoais. Você revisa o texto antes de enviá-lo.</CardDescription><Button type="button" variant="outline" onClick={() => setReportOpen(true)} className="border-amber-300 bg-white font-bold text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100 dark:hover:bg-amber-900">Preparar relato seguro <ArrowRight className="ml-2 h-4 w-4" /></Button></CardContent>
+          <CardContent><CardDescription className="mb-4 text-slate-700 dark:text-amber-100">Prepare um relato técnico para indicar o problema que você está tendo.</CardDescription><Button type="button" variant="outline" onClick={() => setReportOpen(true)} className="border-amber-300 bg-white font-bold text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100 dark:hover:bg-amber-900">Preparar relato <ArrowRight className="ml-2 h-4 w-4" /></Button></CardContent>
         </Card>
       </section>
 
