@@ -11,6 +11,7 @@ import { buildCnisTimeline } from "@/lib/cnis-timeline";
 import { sanitizeAnalysis, sanitizeSensitiveText } from "@/lib/cnis-privacy";
 import { withTemporaryDirectory } from "@/lib/cnis-temp";
 import { simulateProgrammedRetirement } from "@/lib/cnis-simulation";
+import { assessPotentialBenefits } from "@/lib/cnis-benefits";
 
 const execFileAsync = promisify(execFile);
 const execFileWithInput = execFileAsync as unknown as (file: string, args: string[], options?: { timeout?: number; maxBuffer?: number }) => Promise<{ stdout: string; stderr: string }>;
@@ -69,6 +70,21 @@ export const CnisAnalysisSchema = z.object({
     benefits: z.array(z.object({ kind: z.string().nullable(), start: z.string().nullable(), end: z.string().nullable(), source: z.object({ page: z.number(), excerpt: z.string() }) })),
     indicators: z.array(z.object({ code: z.string(), periods: z.array(z.string()), source: z.object({ page: z.number(), excerpt: z.string() }) })),
   }).default({ employments: [], contributions: [], benefits: [], indicators: [] }),
+  profile: z.object({
+    label: z.string(),
+    summary: z.string(),
+    signals: z.array(z.string()),
+    limitations: z.array(z.string()),
+  }),
+  potentialBenefits: z.array(z.object({
+    code: z.string(),
+    name: z.string(),
+    status: z.enum(["possibilidade_identificada", "carencia_potencialmente_suficiente", "dados_insuficientes", "nao_identificado"]),
+    summary: z.string(),
+    evidence: z.array(z.string()),
+    missingRequirements: z.array(z.string()),
+    normativeSource: z.string(),
+  })),
   simulation: z.object({
     rule: z.literal("aposentadoria_programada"),
     normativeSource: z.string(),
@@ -251,6 +267,7 @@ function buildDeterministicFallback(facts: CnisFacts, reason: string): CnisAnaly
   const simulation = simulateProgrammedRetirement(metrics);
   const auditFindings = auditStructuredCnis(facts.structured, facts.text.length);
   const timeline = buildCnisTimeline(facts.structured, auditFindings);
+  const benefitAssessment = assessPotentialBenefits(metrics, facts.structured);
   const extractionNote = facts.extractedByOcr ? " O documento foi lido com OCR; confira as fontes com atenção." : "";
   const fallback = {
     qualityScore: Math.min(100, Math.max(20, Math.round((facts.text.length / 12000) * 100) - (facts.extractedByOcr ? 15 : 0))),
@@ -266,7 +283,7 @@ function buildDeterministicFallback(facts: CnisFacts, reason: string): CnisAnaly
     recommendations: ["Confira as tabelas e as páginas de origem no CNIS original.", "Separe documentos dos períodos apontados como lacuna ou inconsistência.", "Leve o relatório a um profissional previdenciário para validação."],
     nextSteps: ["Revisar lacunas, sobreposições e competências fora dos períodos.", "Validar indicadores e valores de contribuição.", "Refazer a análise quando houver um PDF mais legível, se necessário."],
   };
-  return CnisAnalysisSchema.parse({ ...fallback, ...metrics, competenciasIdentificadas: metrics.competenciesIdentified, auditFindings, timeline, structured: facts.structured, simulation, reason });
+  return CnisAnalysisSchema.parse({ ...fallback, ...metrics, competenciasIdentificadas: metrics.competenciesIdentified, auditFindings, timeline, structured: facts.structured, simulation, profile: benefitAssessment.profile, potentialBenefits: benefitAssessment.benefits, reason });
 }
 
 export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAnalysis> {
@@ -278,6 +295,7 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
   const simulation = simulateProgrammedRetirement(metrics);
   const auditFindings = auditStructuredCnis(facts.structured, facts.text.length);
   const timeline = buildCnisTimeline(facts.structured, auditFindings);
+  const benefitAssessment = assessPotentialBenefits(metrics, facts.structured);
   const compactFacts = sanitizeAnalysis({
     text: sanitizeSensitiveText(facts.text).slice(0, 28000),
     pages: facts.pages,
@@ -293,6 +311,8 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
     },
     auditFindings: auditFindings.slice(0, 100),
     simulation,
+    profile: benefitAssessment.profile,
+    potentialBenefits: benefitAssessment.benefits,
     metrics,
   });
   const prompt = `Você é um analista previdenciário. Retorne SOMENTE JSON válido, sem markdown. Não invente dados e não diga que carência está confirmada apenas porque uma competência foi identificada. Use os cálculos determinísticos fornecidos e explique limitações.\n\nFATOS ESTRUTURADOS: ${JSON.stringify(compactFacts)}\n\nRetorne exatamente: qualityScore (0-100), riskLevel, contributionStatus, tempoContribuicaoTotal, carenciaTotal, carenciaPotencial, carenciaConfirmada, competenciasIdentificadas, calculationBasis, periodMonths, overlappingMonths, gaps, overlaps, invalidPeriods, competenciesOutsidePeriods, estimativaAposentadoria, progressoAposentadoria (0-100), pendencies, summary, recommendations, nextSteps. Os arrays pendencies devem conter indicator, description, recommendedAction, relatedPeriods e severity.`;
@@ -324,7 +344,7 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
     const raw = body.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!raw) return buildDeterministicFallback(facts, "Resposta vazia da Gemini");
     const parsed = JSON.parse(raw.replace(/^```json\s*|\s*```$/g, ""));
-    return CnisAnalysisSchema.parse({ ...parsed, estimativaAposentadoria: normalizeEstimate(parsed.estimativaAposentadoria), ...metrics, competenciasIdentificadas: metrics.competenciesIdentified, auditFindings, timeline, structured: facts.structured, simulation, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
+    return CnisAnalysisSchema.parse({ ...parsed, estimativaAposentadoria: normalizeEstimate(parsed.estimativaAposentadoria), ...metrics, competenciasIdentificadas: metrics.competenciesIdentified, auditFindings, timeline, structured: facts.structured, simulation, profile: benefitAssessment.profile, potentialBenefits: benefitAssessment.benefits, tempoContribuicaoTotal: metrics.tempoContribuicaoTotal, carenciaTotal: metrics.carenciaTotal, progressoAposentadoria: metrics.progressoAposentadoria });
   } catch (error) {
     console.error("[GEMINI] Resposta inválida; usando fallback determinístico", { errorType: error instanceof Error ? error.name : "unknown_error" });
     return buildDeterministicFallback(facts, "Resposta inválida da Gemini");

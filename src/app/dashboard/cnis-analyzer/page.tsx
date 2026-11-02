@@ -231,18 +231,34 @@ export default function CnisAnalyzerPage() {
       paragraph(`Dados ausentes: ${simulation.missingData.join(", ")}.`, 9.5);
       paragraph(`${simulation.limitation} Fonte: ${simulation.normativeSource}`, 9.5);
     }
-    sectionTitle("5. Linha do tempo");
+    if (state.data.profile) {
+      sectionTitle("5. Perfil identificado no CNIS");
+      paragraph(`${state.data.profile.label}. ${state.data.profile.summary}`, 10);
+      state.data.profile.signals.forEach((item: string) => paragraph(`Sinal encontrado: ${item}`, 9.5));
+      state.data.profile.limitations.forEach((item: string) => paragraph(`Limitação: ${item}`, 9.5));
+    }
+    if (state.data.potentialBenefits?.length) {
+      sectionTitle("6. Benefícios potencialmente compatíveis");
+      paragraph("Triagem informativa baseada no perfil contributivo e nos registros encontrados. Não confirma direito ao benefício.", 9.5);
+      state.data.potentialBenefits.forEach((benefit: any) => {
+        paragraph(`${benefit.name} — ${benefit.summary}`, 10);
+        benefit.evidence.forEach((item: string) => paragraph(`Evidência: ${item}`, 9.5));
+        benefit.missingRequirements.forEach((item: string) => paragraph(`Conferir: ${item}`, 9.5));
+        paragraph(`Fonte oficial: ${benefit.normativeSource}`, 8.5);
+      });
+    }
+    sectionTitle("7. Linha do tempo");
     if (state.data.timeline?.length) state.data.timeline.slice(0, 20).forEach((event: any) => paragraph(`${event.period} — ${event.title}. ${event.detail}${event.source ? ` Fonte: página ${event.source.page}.` : ""}`, 10));
     else paragraph("Não foi possível montar uma linha do tempo com os dados identificados.");
-    pdfTable("6. Vínculos identificados", ["Empregador", "Categoria", "Início", "Fim", "Indicadores", "Fonte"], (state.data.structured?.employments || []).map((item: any) => [item.employer || "Não identificado", item.category || "Não identificado", item.start, item.end, item.indicators?.join(", ") || "Nenhum", `Pág. ${item.source?.page || "—"}`]));
-    pdfTable("7. Contribuições identificadas", ["Competência", "Situação", "Indicador", "Valor", "Fonte"], (state.data.structured?.contributions || []).map((item: any) => [item.competency, item.status === "identified" ? "Identificada" : "Não confirmada", item.indicator || "Nenhum", item.value == null ? "Não identificado" : String(item.value), `Pág. ${item.source?.page || "—"}`]));
-    pdfTable("8. Benefícios identificados", ["Benefício", "Início", "Fim", "Fonte"], (state.data.structured?.benefits || []).map((item: any) => [item.kind || "Não identificado", item.start || "Não identificado", item.end || "Não identificado", `Pág. ${item.source?.page || "—"}`]));
-    sectionTitle("9. Pontos para conferir");
+    pdfTable("8. Vínculos identificados", ["Empregador", "Categoria", "Início", "Fim", "Indicadores", "Fonte"], (state.data.structured?.employments || []).map((item: any) => [item.employer || "Não identificado", item.category || "Não identificado", item.start, item.end, item.indicators?.join(", ") || "Nenhum", `Pág. ${item.source?.page || "—"}`]));
+    pdfTable("9. Contribuições identificadas", ["Competência", "Situação", "Indicador", "Valor", "Fonte"], (state.data.structured?.contributions || []).map((item: any) => [item.competency, item.status === "identified" ? "Identificada" : "Não confirmada", item.indicator || "Nenhum", item.value == null ? "Não identificado" : String(item.value), `Pág. ${item.source?.page || "—"}`]));
+    pdfTable("10. Benefícios identificados", ["Benefício", "Início", "Fim", "Fonte"], (state.data.structured?.benefits || []).map((item: any) => [item.kind || "Não identificado", item.start || "Não identificado", item.end || "Não identificado", `Pág. ${item.source?.page || "—"}`]));
+    sectionTitle("11. Pontos para conferir");
     const auditAlerts = (state.data.auditFindings || []).filter((item: any) => item.kind !== "DADO");
     if (auditAlerts.length) auditAlerts.slice(0, 12).forEach((item: any) => callout(`${item.kind}: ${item.title}`, `${item.description} Ação recomendada: ${item.recommendedAction}`, item.kind === "ALERTA" ? [255, 247, 237] : [254, 242, 242], item.kind === "ALERTA" ? [217, 119, 6] : [220, 38, 38]));
     else paragraph("Nenhum ponto adicional para conferência foi registrado na leitura automática.");
-    sectionTitle("10. Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
-    sectionTitle("11. Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    sectionTitle("12. Recomendações"); (state.data.recommendations || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
+    sectionTitle("13. Próximos passos"); (state.data.nextSteps || []).forEach((item: string, index: number) => paragraph(`${index + 1}. ${item}`));
     callout("Importante", "Leve este relatório e o CNIS original a um profissional previdenciário. A análise automática pode não identificar todos os detalhes ou documentos necessários.", [254, 242, 242], [220, 38, 38]);
     ensureSpace(18); pdf.setFont("helvetica", "italic"); pdf.setFontSize(9); pdf.setTextColor(...slate);
     pdf.text("Nelson IA — relatório informativo, não substitui orientação profissional.", margin, y);
@@ -431,6 +447,47 @@ export default function CnisAnalyzerPage() {
               </Card>
             );
           })()}
+
+          {state.data.profile && (
+            <Card className="border-2 border-sky-100 bg-sky-50/60 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-2xl font-black text-sky-950">Perfil identificado no CNIS</CardTitle>
+                <CardDescription className="text-base text-sky-950/75">Uma leitura do padrão contributivo encontrado, sem inferir informações pessoais que não estejam no documento.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-xl bg-white/80 p-4">
+                  <p className="text-sm font-black text-sky-900">{state.data.profile.label}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-sky-950/75">{state.data.profile.summary}</p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div><p className="text-sm font-black text-sky-950">Sinais encontrados</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-sky-950/75">{state.data.profile.signals.map((item: string, index: number) => <li key={index}>{item}</li>)}</ul></div>
+                  <div><p className="text-sm font-black text-sky-950">Limitações da leitura</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-sky-950/75">{state.data.profile.limitations.map((item: string, index: number) => <li key={index}>{item}</li>)}</ul></div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {state.data.potentialBenefits?.length > 0 && (
+            <Card className="border-2 border-emerald-100 bg-emerald-50/50 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-2xl font-black text-emerald-950">Benefícios potencialmente compatíveis</CardTitle>
+                <CardDescription className="text-base text-emerald-950/75">Triagem preliminar baseada no perfil contributivo e nos registros encontrados. Não confirma direito ao benefício.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-2">
+                {state.data.potentialBenefits.map((benefit: any) => {
+                  const label = benefit.status === "possibilidade_identificada" ? "Possibilidade identificada" : benefit.status === "carencia_potencialmente_suficiente" ? "Carência potencialmente suficiente" : benefit.status === "dados_insuficientes" ? "Dados insuficientes" : "Não identificado";
+                  const badgeClass = benefit.status === "possibilidade_identificada" ? "border-emerald-300 bg-emerald-100 text-emerald-800" : benefit.status === "carencia_potencialmente_suficiente" ? "border-amber-300 bg-amber-100 text-amber-800" : "border-slate-300 bg-slate-100 text-slate-700";
+                  return <div key={benefit.code} className="rounded-2xl border border-emerald-200 bg-white/85 p-5 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3"><h3 className="text-lg font-black text-slate-900">{benefit.name}</h3><Badge variant="outline" className={badgeClass}>{label}</Badge></div>
+                    <p className="mt-3 text-sm leading-relaxed text-slate-700">{benefit.summary}</p>
+                    <div className="mt-4"><p className="text-sm font-black text-slate-900">Evidências</p><ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">{benefit.evidence.map((item: string, index: number) => <li key={index}>{item}</li>)}</ul></div>
+                    <div className="mt-4"><p className="text-sm font-black text-slate-900">Ainda é necessário conferir</p><ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">{benefit.missingRequirements.map((item: string, index: number) => <li key={index}>{item}</li>)}</ul></div>
+                    <a className="mt-4 inline-block text-xs font-semibold text-emerald-800 underline" href={benefit.normativeSource} target="_blank" rel="noreferrer">Consultar fonte oficial</a>
+                  </div>;
+                })}
+              </CardContent>
+            </Card>
+          )}
 
           {state.data.timeline?.length > 0 && (
             <Card className="border-2 shadow-lg overflow-hidden">
