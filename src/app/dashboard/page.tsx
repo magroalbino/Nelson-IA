@@ -61,7 +61,6 @@ export default function DashboardPage() {
       <section className="relative isolate overflow-hidden rounded-[2rem] bg-slate-950 px-6 py-8 text-white shadow-2xl shadow-blue-950/20 sm:px-10 sm:py-10 lg:px-14 lg:py-12">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_78%_30%,rgba(37,99,235,0.25),transparent_28%),radial-gradient(circle_at_44%_110%,rgba(79,70,229,0.24),transparent_38%)]" />
         <div className="absolute right-[-8%] top-[-35%] -z-10 h-[28rem] w-[28rem] rounded-full border border-blue-300/10 bg-blue-500/10 blur-3xl" />
-        <div className="absolute inset-y-0 right-1/2 -z-10 hidden w-px bg-gradient-to-b from-transparent via-white/10 to-transparent lg:block" />
         <div className="relative flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-center">
           <div className="max-w-2xl space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-blue-100 shadow-inner shadow-white/5">
