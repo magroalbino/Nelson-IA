@@ -2,9 +2,16 @@
 
 import { z } from 'zod';
 
+const MAX_DOCUMENT_BYTES = 18 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
 const GenerateLegalPetitionInputSchema = z.object({
-  documentUri: z.string().min(1),
-  tipoPetição: z.string().min(1),
+  documentUri: z.string().min(1).max(25_000_000),
+  tipoPetição: z.enum(['administrativo', 'judicial']),
 });
 
 const GenerateLegalPetitionOutputSchema = z.object({
@@ -26,7 +33,14 @@ type GeminiResponse = {
 function parseDataUri(documentUri: string): { mimeType: string; data: string } {
   const match = documentUri.match(/^data:([^;,]+);base64,([\s\S]+)$/);
   if (!match) throw new Error('Documento em formato inválido. Reenvie o arquivo em PDF ou Word.');
-  return { mimeType: match[1], data: match[2] };
+  const mimeType = match[1].toLowerCase();
+  const data = match[2].replace(/\s/g, '');
+  if (!ALLOWED_MIME_TYPES.has(mimeType)) throw new Error('Formato de documento não permitido. Use PDF, DOC ou DOCX.');
+  if (!data || data.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(data)) throw new Error('Documento em formato inválido. Reenvie o arquivo em PDF ou Word.');
+  const bytes = Buffer.from(data, 'base64');
+  if (bytes.length === 0) throw new Error('O documento enviado está vazio.');
+  if (bytes.length > MAX_DOCUMENT_BYTES) throw new Error('O documento deve ter no máximo 18 MB.');
+  return { mimeType, data };
 }
 
 function parseJsonResponse(text: string): unknown {
@@ -46,6 +60,7 @@ async function requestGemini(model: string, apiKey: string, payload: string): Pr
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: payload,
+    signal: AbortSignal.timeout(30_000),
   });
 }
 
@@ -78,8 +93,7 @@ Regras obrigatórias:
       response = await requestGemini(candidate, apiKey, payload);
       if (response.ok) break;
       lastStatus = response.status;
-      const details = await response.text();
-      console.error(`[PETIÇÃO] modelo=${candidate} tentativa=${attempt + 1} HTTP ${response.status}:`, details);
+      console.error('[PETIÇÃO] Falha na chamada ao modelo.', { model: candidate, attempt: attempt + 1, status: response.status });
       if (![429, 500, 502, 503, 504].includes(response.status)) break;
       if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 700));
     }

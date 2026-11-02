@@ -3,11 +3,17 @@ const LONG_IDENTIFIER_RE = /\b\d{10,14}\b/g;
 const LABELLED_NAME_RE = /((?:nome(?: completo)?|nome do segurado|nome da mãe|mãe|titular)\s*:\s*)([^\n;|]+)/gi;
 const SENSITIVE_LABEL_RE = /((?:cpf|nit|nis|pis|pasep|rg|endereço|endereco|telefone|celular|e-?mail|n[uú]mero do benef[ií]cio|protocolo|processo)\s*[:#-]?\s*)([^\n;|]+)/gi;
 const BASE64_RE = /data:[^;]+;base64,[a-z0-9+/=\s]+/gi;
+const API_KEY_RE = /([?&](?:key|api_key|apikey|token)=)[^&\s]+/gi;
+const AUTH_HEADER_RE = /(authorization\s*:\s*bearer\s+)[^\s,]+/gi;
+const ABSOLUTE_PATH_RE = /(?:\/home\/[^\s]+|\/tmp\/[^\s]+|[A-Z]:\\[^\s]+)/gi;
 const SENSITIVE_PAYLOAD_KEYS = new Set(["fileName", "pdf", "pdfBase64", "document", "documentBytes", "rawPdf", "rawText", "textIntegral"]);
 
 export function sanitizeSensitiveText(value: string): string {
   return value
     .replace(BASE64_RE, "[CONTEÚDO REMOVIDO]")
+    .replace(API_KEY_RE, "$1[REMOVIDO]")
+    .replace(AUTH_HEADER_RE, "$1[REMOVIDO]")
+    .replace(ABSOLUTE_PATH_RE, "[CAMINHO REMOVIDO]")
     .replace(SENSITIVE_LABEL_RE, "$1[REMOVIDO]")
     .replace(LABELLED_NAME_RE, "$1[REMOVIDO]")
     .replace(CPF_RE, "[CPF REMOVIDO]")

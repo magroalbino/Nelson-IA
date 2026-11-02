@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { generateLegalPetition } from "@/ai/flows/generate-legal-petition";
 import { analyzeCnisPdf } from "@/lib/cnis-analyzer";
+import { safeErrorMessage } from "@/lib/cnis-privacy";
+import { validateCnisUpload } from "@/lib/cnis-upload";
 
 // Schema for Legal Petition Generation
 const petitionSchema = z.object({
@@ -46,10 +48,10 @@ export async function generatePetitionAction(
       message: "Petição gerada com sucesso!",
       data: result,
     };
-  } catch (error: any) {
-    console.error("[ACTION] Erro Petição:", error);
+  } catch (error) {
+    console.error("[ACTION] Falha operacional na geração de petição.", error instanceof Error ? error.name : "erro_desconhecido");
     return {
-      message: error?.message || "Falha ao gerar a petição. Tente novamente.",
+      message: safeErrorMessage(error) || "Falha ao gerar a petição. Tente novamente.",
     };
   }
 }
@@ -80,22 +82,18 @@ export async function analyzeCnisAction(prevState: CnisState, formData: FormData
     try {
         const file = validatedFields.data.cnisDocument;
         if (file.size === 0) throw new Error('O arquivo enviado está vazio.');
-        if (file.size > 25 * 1024 * 1024) throw new Error('O PDF deve ter no máximo 25 MB.');
-
         const bytes = Buffer.from(await file.arrayBuffer());
-        // O MIME type pode chegar vazio ou como application/octet-stream na Vercel.
-        // A assinatura `%PDF-` é a validação confiável do formato real.
-        const isPdf = bytes.subarray(0, 5).toString('ascii') === '%PDF-';
-        if (!isPdf) throw new Error('O arquivo enviado não parece ser um PDF válido.');
+        const validationError = validateCnisUpload({ size: file.size, bytes });
+        if (validationError) throw new Error(validationError);
         const result = await analyzeCnisPdf(bytes);
         return {
             message: 'Análise do CNIS concluída!',
             data: result,
         };
-    } catch (error: any) {
-        console.error("[ACTION] Erro CNIS:", error);
+    } catch (error) {
+        console.error("[ACTION] Falha operacional na análise CNIS.", error instanceof Error ? error.name : "erro_desconhecido");
         return {
-            message: error?.message || "Falha ao analisar o CNIS. O documento pode ser incompatível.",
+            message: safeErrorMessage(error) || "Falha ao analisar o CNIS. O documento pode ser incompatível.",
         };
     }
 }

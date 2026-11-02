@@ -29,7 +29,7 @@ export default function HistoryPage() {
     try {
       setItems(await listSavedCnisAnalyses(user));
     } catch (loadError) {
-      console.error("[CNIS] Falha ao carregar histórico:", loadError);
+      console.error("[CNIS] Falha ao carregar histórico.", loadError instanceof Error ? loadError.name : "erro_operacional");
       setError("Não foi possível carregar seu histórico. Verifique as regras do Firestore e tente novamente.");
     } finally {
       setLoadingItems(false);

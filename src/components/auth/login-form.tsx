@@ -84,7 +84,7 @@ export function LoginForm() {
         });
         // onAuthStateChanged will handle the redirect
     } catch (error: any) {
-        console.error(`Firebase ${isRegisterMode ? 'Register' : 'Login'} Error:`, error);
+        console.error(`Firebase ${isRegisterMode ? 'Register' : 'Login'} Error.`, typeof error?.code === "string" ? error.code : "erro_operacional");
         let errorMessage = "Ocorreu um erro. Tente novamente.";
         switch (error.code) {
             case 'auth/email-already-in-use':
@@ -143,7 +143,7 @@ export function LoginForm() {
         description: "Verifique sua caixa de entrada (e a pasta de spam) para o link de redefinição de senha.",
       });
     } catch (error: any) {
-      console.error("Password Reset Error:", error);
+      console.error("Password Reset Error.", typeof error?.code === "string" ? error.code : "erro_operacional");
       let errorMessage = "Ocorreu um erro ao enviar o e-mail de redefinição.";
        if (error.code === 'auth/user-not-found') {
         errorMessage = 'Nenhuma conta encontrada com este endereço de e-mail.';
@@ -268,7 +268,3 @@ export function LoginForm() {
     </div>
   );
 }
-
-    
-
-    

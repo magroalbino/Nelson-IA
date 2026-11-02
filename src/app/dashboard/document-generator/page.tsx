@@ -103,7 +103,8 @@ export default function DocumentGeneratorPage() {
                     name="document"
                     onFileSelect={(_, dataUri) => setDocumentUri(dataUri || "")}
                     acceptedFileTypes={["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]} 
-                />
+                    maxSizeMB={18}
+                  />
             </div>
             
             <div className="space-y-4">

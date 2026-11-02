@@ -28,8 +28,11 @@ describe("privacidade do fluxo CNIS", () => {
   });
 
   it("limita e sanitiza mensagens de erro", () => {
-    const message = safeErrorMessage(new Error("CPF: 123.456.789-09; " + "x".repeat(500)));
+    const message = safeErrorMessage(new Error("CPF: 123.456.789-09; ?key=secret-api-key authorization: Bearer secret-token /tmp/nelson-cnis-secret; " + "x".repeat(500)));
     expect(message).not.toContain("123.456.789-09");
+    expect(message).not.toContain("secret-api-key");
+    expect(message).not.toContain("secret-token");
+    expect(message).not.toContain("/tmp/nelson-cnis-secret");
     expect(message.length).toBeLessThanOrEqual(280);
   });
 });
