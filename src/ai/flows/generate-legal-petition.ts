@@ -10,7 +10,7 @@ const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 const GenerateLegalPetitionInputSchema = z.object({
-  documentUri: z.string().min(1).max(25_000_000),
+  document: z.instanceof(File),
   tipoPetição: z.enum(['administrativo', 'judicial']),
 });
 
@@ -30,17 +30,16 @@ type GeminiResponse = {
   candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
 };
 
-function parseDataUri(documentUri: string): { mimeType: string; data: string } {
-  const match = documentUri.match(/^data:([^;,]+);base64,([\s\S]+)$/);
-  if (!match) throw new Error('Documento em formato inválido. Reenvie o arquivo em PDF ou Word.');
-  const mimeType = match[1].toLowerCase();
-  const data = match[2].replace(/\s/g, '');
+async function parseDocument(document: File): Promise<{ mimeType: string; data: string }> {
+  const extension = document.name.toLowerCase().split('.').pop();
+  const mimeType = (document.type || (extension === 'pdf' ? 'application/pdf' : extension === 'doc' ? 'application/msword' : extension === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : '')).toLowerCase();
   if (!ALLOWED_MIME_TYPES.has(mimeType)) throw new Error('Formato de documento não permitido. Use PDF, DOC ou DOCX.');
-  if (!data || data.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(data)) throw new Error('Documento em formato inválido. Reenvie o arquivo em PDF ou Word.');
-  const bytes = Buffer.from(data, 'base64');
+  if (document.size === 0) throw new Error('O documento enviado está vazio.');
+  if (document.size > MAX_DOCUMENT_BYTES) throw new Error('O documento deve ter no máximo 18 MB.');
+  const bytes = Buffer.from(await document.arrayBuffer());
   if (bytes.length === 0) throw new Error('O documento enviado está vazio.');
-  if (bytes.length > MAX_DOCUMENT_BYTES) throw new Error('O documento deve ter no máximo 18 MB.');
-  return { mimeType, data };
+  if (mimeType === 'application/pdf' && bytes.subarray(0, 5).toString('ascii') !== '%PDF-') throw new Error('O arquivo não parece ser um PDF válido.');
+  return { mimeType, data: bytes.toString('base64') };
 }
 
 function parseJsonResponse(text: string): unknown {
@@ -64,12 +63,12 @@ async function requestGemini(model: string, apiKey: string, payload: string): Pr
   });
 }
 
-export async function generateLegalPetition(input: { documentUri: string; tipoPetição: string }) {
+export async function generateLegalPetition(input: { document: File; tipoPetição: string }) {
   const validated = GenerateLegalPetitionInputSchema.parse(input);
   const apiKey = process.env.GOOGLE_GENAI_API_KEY;
   if (!apiKey) throw new Error('A variável GOOGLE_GENAI_API_KEY não está configurada no servidor.');
 
-  const { mimeType, data } = parseDataUri(validated.documentUri);
+  const { mimeType, data } = await parseDocument(validated.document);
   const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || 'gemini-2.5-flash-lite';
   const prompt = `Você é um assistente de redação jurídica previdenciária. Analise o documento anexado e prepare uma minuta de ${validated.tipoPetição === 'judicial' ? 'petição inicial judicial para a Justiça Federal' : 'requerimento administrativo dirigido ao INSS'}.
@@ -88,14 +87,22 @@ Regras obrigatórias:
 
   let lastStatus = 0;
   let response: Response | undefined;
+  const deadline = Date.now() + 42_000;
   for (const candidate of [...new Set([model, fallbackModel])]) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      response = await requestGemini(candidate, apiKey, payload);
+      if (Date.now() >= deadline) break;
+      try {
+        response = await requestGemini(candidate, apiKey, payload);
+      } catch {
+        response = undefined;
+        lastStatus = 504;
+      }
+      if (!response) continue;
       if (response.ok) break;
       lastStatus = response.status;
       console.error('[PETIÇÃO] Falha na chamada ao modelo.', { model: candidate, attempt: attempt + 1, status: response.status });
       if (![429, 500, 502, 503, 504].includes(response.status)) break;
-      if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 700));
+      if (attempt === 0 && Date.now() + 700 < deadline) await new Promise((resolve) => setTimeout(resolve, 700));
     }
     if (response?.ok) break;
   }

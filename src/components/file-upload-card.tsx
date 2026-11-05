@@ -7,7 +7,7 @@ import { UploadCloud, FileText, X, CheckCircle2, AlertCircle } from 'lucide-reac
 import { toast } from '@/hooks/use-toast';
 
 interface FileUploadCardProps {
-  onFileSelect: (file: File | null, dataUri?: string) => void;
+  onFileSelect: (file: File | null) => void;
   name?: string;
   acceptedFileTypes?: string[];
   maxSizeMB?: number;
@@ -45,12 +45,8 @@ export function FileUploadCard({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setSelectedFile(file);
-      onFileSelect(file, event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    setSelectedFile(file);
+    onFileSelect(file);
   };
 
   const onDrop = (e: React.DragEvent) => {
@@ -63,7 +59,7 @@ export function FileUploadCard({
 
   const removeFile = () => {
     setSelectedFile(null);
-    onFileSelect(null, "");
+    onFileSelect(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 

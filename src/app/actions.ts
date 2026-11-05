@@ -8,7 +8,7 @@ import { validateCnisUpload } from "@/lib/cnis-upload";
 
 // Schema for Legal Petition Generation
 const petitionSchema = z.object({
-  documentUri: z.string().min(1, "O upload do documento é obrigatório."),
+  document: z.instanceof(File, { message: "O upload do documento é obrigatório." }),
   tipoPetição: z.enum(["administrativo", "judicial"], {
     errorMap: () => ({ message: "Selecione um tipo de petição válido." }),
   }),
@@ -17,7 +17,7 @@ const petitionSchema = z.object({
 interface PetitionState {
   errors?: {
     tipoPetição?: string[];
-    documentUri?: string[];
+    document?: string[];
   };
   message?: string | null;
   data?: {
@@ -31,7 +31,7 @@ export async function generatePetitionAction(
   formData: FormData
 ): Promise<PetitionState> {
   const validatedFields = petitionSchema.safeParse({
-    documentUri: formData.get("documentUri"),
+    document: formData.get("document"),
     tipoPetição: formData.get("tipoPetição"),
   });
 

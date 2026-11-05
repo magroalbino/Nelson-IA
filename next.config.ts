@@ -12,12 +12,6 @@ const nextConfig: NextConfig = {
       ],
     }];
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   serverExternalPackages: ['genkit'],
   experimental: {
     serverActions: {

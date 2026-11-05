@@ -53,7 +53,7 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 
 export default function DocumentGeneratorPage() {
   const [state, formAction] = useActionState(generatePetitionAction, initialState);
-  const [documentUri, setDocumentUri] = useState("");
+  const [document, setDocument] = useState<File | null>(null);
 
   useEffect(() => {
     if (state.message) {
@@ -89,7 +89,6 @@ export default function DocumentGeneratorPage() {
         </div>
         <form action={formAction}>
           <CardContent className="space-y-10 pt-10 px-8">
-            <input type="hidden" name="documentUri" value={documentUri} />
 
             <div className="space-y-4">
                 <Label className="text-xl font-black flex items-center gap-2 text-foreground">
@@ -101,7 +100,7 @@ export default function DocumentGeneratorPage() {
                 </p>
                 <FileUploadCard 
                     name="document"
-                    onFileSelect={(_, dataUri) => setDocumentUri(dataUri || "")}
+                    onFileSelect={setDocument}
                     acceptedFileTypes={["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]} 
                     maxSizeMB={18}
                   />
@@ -127,7 +126,7 @@ export default function DocumentGeneratorPage() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-center bg-muted/30 border-t py-10">
-            <SubmitButton disabled={!documentUri} />
+            <SubmitButton disabled={!document} />
           </CardFooter>
         </form>
       </Card>

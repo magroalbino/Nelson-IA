@@ -18,9 +18,9 @@ const execFileWithInput = execFileAsync as unknown as (file: string, args: strin
 
 export const CnisAnalysisSchema = z.object({
   qualityScore: z.number().min(0).max(100),
-  riskLevel: z.string(),
-  contributionStatus: z.string(),
-  tempoContribuicaoTotal: z.string(),
+  riskLevel: z.string().max(120),
+  contributionStatus: z.string().max(500),
+  tempoContribuicaoTotal: z.string().max(120),
   carenciaTotal: z.number().nonnegative(),
   carenciaPotencial: z.number().nonnegative().default(0),
   carenciaConfirmada: z.number().nonnegative().default(0),
@@ -28,11 +28,11 @@ export const CnisAnalysisSchema = z.object({
   calculationBasis: z.string().optional(),
   periodMonths: z.number().nonnegative().default(0),
   overlappingMonths: z.number().nonnegative().default(0),
-  gaps: z.array(z.object({ start: z.string(), end: z.string(), months: z.number().nonnegative() })).default([]),
-  overlaps: z.array(z.object({ start: z.string(), end: z.string(), months: z.number().nonnegative() })).default([]),
-  invalidPeriods: z.array(z.object({ start: z.string(), end: z.string(), source: z.string(), page: z.number().optional() })).default([]),
-  competenciesOutsidePeriods: z.array(z.string()).default([]),
-  estimativaAposentadoria: z.string(),
+  gaps: z.array(z.object({ start: z.string().max(20), end: z.string().max(20), months: z.number().nonnegative() })).max(500).default([]),
+  overlaps: z.array(z.object({ start: z.string().max(20), end: z.string().max(20), months: z.number().nonnegative() })).max(500).default([]),
+  invalidPeriods: z.array(z.object({ start: z.string().max(20), end: z.string().max(20), source: z.string().max(500), page: z.number().optional() })).max(500).default([]),
+  competenciesOutsidePeriods: z.array(z.string().max(20)).max(2000).default([]),
+  estimativaAposentadoria: z.string().max(1000),
   progressoAposentadoria: z.number().min(0).max(100),
   pendencies: z.array(z.object({
     indicator: z.string(),
@@ -41,9 +41,9 @@ export const CnisAnalysisSchema = z.object({
     relatedPeriods: z.array(z.string()).default([]),
     severity: z.string(),
   })),
-  summary: z.string(),
-  recommendations: z.array(z.string()),
-  nextSteps: z.array(z.string()),
+  summary: z.string().max(3000),
+  recommendations: z.array(z.string().max(1000)).max(100),
+  nextSteps: z.array(z.string().max(1000)).max(100),
   auditFindings: z.array(z.object({
     kind: z.enum(["DADO", "ALERTA", "HIPÓTESE"]),
     code: z.string(),
@@ -320,10 +320,12 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
   const payload = JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } });
   let response: Response | undefined;
   let lastStatus = 0;
+  const deadline = Date.now() + 42_000;
   for (const candidate of [...new Set([model, fallbackModel])]) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (Date.now() >= deadline) return buildDeterministicFallback(facts, "Tempo limite total da IA excedido");
       try {
-        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(candidate)}:generateContent?key=${encodeURIComponent(apiKey)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload, signal: AbortSignal.timeout(30000) });
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(candidate)}:generateContent?key=${encodeURIComponent(apiKey)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload, signal: AbortSignal.timeout(Math.max(1_000, Math.min(30_000, deadline - Date.now()))) });
       } catch (error) {
         response = undefined;
         lastStatus = 504;
@@ -334,7 +336,7 @@ export async function interpretCnisWithGemini(facts: CnisFacts): Promise<CnisAna
       lastStatus = response.status;
       console.error("[GEMINI] Falha na chamada", { model: candidate, attempt: attempt + 1, status: response.status });
       if (![429, 500, 502, 503, 504].includes(response.status)) break;
-      if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 700));
+      if (attempt === 0 && Date.now() + 700 < deadline) await new Promise((resolve) => setTimeout(resolve, 700));
     }
     if (response?.ok) break;
   }
